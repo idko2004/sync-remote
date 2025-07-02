@@ -1,13 +1,13 @@
-use std::{io::Cursor, str::FromStr, time::SystemTime};
-use chrono::{Date, DateTime, Utc};
+use std::str::FromStr;
+use chrono::{DateTime, Utc};
 use suppaftp::{FtpStream, list};
 
 struct File
 {
-	directory: String,
+	_directory: String,
 	fullpath: String,
 	date_modified: DateTime<Utc>,
-	ftp_file: Option<list::File>,
+	_ftp_file: Option<list::File>,
 }
 
 fn main()
@@ -77,8 +77,8 @@ fn get_all_files_recursive_from(directory: &String, ftp_stream: &mut FtpStream) 
 			{
 				if files_vector.is_empty()
 				{
-					println!("list_directory returnend an empty vector");
-					break;
+					println!("Directory is empty: {}", current_directory);
+					()
 				}
 
 				for ftp_file in files_vector
@@ -103,10 +103,10 @@ fn get_all_files_recursive_from(directory: &String, ftp_stream: &mut FtpStream) 
 						(
 							File
 							{
-								directory: current_directory.clone(),
+								_directory: current_directory.clone(),
 								fullpath: fullpath,
 								date_modified: date_modified,
-								ftp_file: Some(ftp_file.clone()),
+								_ftp_file: Some(ftp_file.clone()),
 							}
 						);
 					}
@@ -114,8 +114,7 @@ fn get_all_files_recursive_from(directory: &String, ftp_stream: &mut FtpStream) 
 			},
 			None =>
 			{
-				println!("list_directory returned None");
-				break;
+				println!("Failed to list directory {}", current_directory);
 			}
 		}
 
