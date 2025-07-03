@@ -2,6 +2,8 @@ use std::str::FromStr;
 use chrono::{DateTime, Utc};
 use suppaftp::{FtpStream, list};
 
+mod config;
+
 struct File
 {
 	_directory: String,
@@ -13,6 +15,16 @@ struct File
 fn main()
 {
 	println!("Hello, world!");
+
+	let config = match config::read_config()
+	{
+		Some(value) => value,
+		None =>
+		{
+			println!("Error al cargar la configuración");
+			return;
+		}
+	};
 
 	let mut ftp_stream = match FtpStream::connect("192.168.0.201:8888")
 	{
@@ -50,7 +62,7 @@ fn main()
 	println!("Directorio actual: {directory}");
 	*/
 
-	let directory = String::from("/");
+	let directory = String::from("/Music");
 	let all_files = get_all_files_recursive_from(&directory, &mut ftp_stream);
 
 	println!("All files:");
