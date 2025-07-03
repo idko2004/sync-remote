@@ -10,16 +10,28 @@ pub struct SyncLocation
 	pub remote_password: String,
 }
 
+fn get_config_location() -> String
+{
+	String::from("config.json")
+}
 
 pub fn read_config() -> Option<Vec<SyncLocation>>
 {
-	let config_file = match fs::read_to_string("config.json")
+	let config_file = match fs::read_to_string(get_config_location())
 	{
 		Ok(value) => value,
-		Err(error) =>
+		Err(_) =>
 		{
-			println!("No se pudo leer la configuración, {}", error);
-			return None;
+			println!("No parece haber configuración guardada, guardando configuración por defecto...");
+			match save_default_config()
+			{
+				Some(value) => value,
+				None =>
+				{
+					println!("No se pudo guardar la configuración por defecto!!");
+					return None;
+				}
+			}
 		}
 	};
 
@@ -193,4 +205,19 @@ pub fn read_config() -> Option<Vec<SyncLocation>>
 	}
 
 	Some(sync_locations)
+}
+
+fn save_default_config() -> Option<String>
+{
+	let default_config_contents = "[\n\t\n]"; //Un array vacío en json
+	match fs::write(get_config_location(), default_config_contents)
+	{
+		Ok(_) => (),
+		Err(error) =>
+		{
+			println!("Error al guardar la configuración!! {error}");
+			return None;
+		}
+	}
+	Some(String::from(default_config_contents)) //Devolver un vector vacío porque no hay ningún remote por defecto.
 }
