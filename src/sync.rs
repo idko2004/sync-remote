@@ -21,13 +21,16 @@ struct File
 	handler: FileHandler,
 }
 
+#[derive(Clone, Copy, PartialEq, Debug)]
 enum SyncVeredict
 {
 	UploadToRemote,
 	DownloadToLocal,
+	DoNothing,
 	NotDecidedYet,
 }
 
+#[derive(Clone)]
 struct LinkedFile
 {
 	relative_path: String,
@@ -72,15 +75,20 @@ pub fn start_sync_blocking(sync_location: &SyncLocation)
 	println!("Listing local files...");
 	let all_local_files = get_all_local_files_recursive_from(&sync_location.local_path.clone());
 
-	println!("Linking files... (this might take a while)");
+	println!("Linking files...");
 	let all_files_linked = link_all_files(&all_remote_files, &all_local_files);
 
+	println!("Calculating how to synchronize...");
+	let all_files_linked = set_sync_veredicts(all_files_linked);
+	
+
+	
 	println!("\n\nAll linked files:");
 	for file in &all_files_linked
 	{
 		if file.local_file.is_some() && file.remote_file.is_some()
 		{
-			println!("{}\n{}\n{}\n",file.relative_path, file.remote_file.clone().unwrap().fullpath, file.local_file.clone().unwrap().fullpath);
+			println!("{:?}\n{}\n{}\n{}\n",file.sync_veredict, file.relative_path, file.remote_file.clone().unwrap().fullpath, file.local_file.clone().unwrap().fullpath);
 		}
 	}
 
@@ -89,7 +97,7 @@ pub fn start_sync_blocking(sync_location: &SyncLocation)
 	{
 		if file.local_file.is_none() && file.remote_file.is_some()
 		{
-			println!("{}\n{}\n{}\n",file.relative_path, file.remote_file.clone().unwrap().fullpath, "(None)");
+			println!("{:?}\n{}\n{}\n{}\n",file.sync_veredict,file.relative_path, file.remote_file.clone().unwrap().fullpath, "(None)");
 		}
 	}
 
@@ -98,9 +106,10 @@ pub fn start_sync_blocking(sync_location: &SyncLocation)
 	{
 		if file.local_file.is_some() && file.remote_file.is_none()
 		{
-			println!("{}\n{}\n{}\n",file.relative_path, "(None)", file.local_file.clone().unwrap().fullpath);
+			println!("{:?}\n{}\n{}\n{}\n",file.sync_veredict,file.relative_path, "(None)", file.local_file.clone().unwrap().fullpath);
 		}
 	}
+
 }
 
 fn get_all_remote_files_recursive_from(directory: &String, ftp_stream: &mut FtpStream) -> Vec<File>
@@ -442,4 +451,62 @@ fn link_all_files(all_remote_files: &Vec<File>, all_local_files: &Vec<File>) -> 
 	}
 
 	all_linked_files
+}
+
+fn set_sync_veredicts(all_linked_files: Vec<LinkedFile>) -> Vec<LinkedFile>
+{
+	let mut new_linked_files_list: Vec<LinkedFile> = Vec::with_capacity(all_linked_files.len());
+	let mut i = 0;
+	loop
+	{
+		let mut linked_file = match all_linked_files.get(i)
+		{
+			Some(value) => value.clone(),
+			None => break,
+		};
+		i += 1;
+
+		if linked_file.sync_veredict != SyncVeredict::NotDecidedYet
+		{
+			new_linked_files_list.push(linked_file);
+			continue;
+		}
+
+		if linked_file.local_file.is_none() && linked_file.remote_file.is_some()
+		{
+			linked_file.sync_veredict = SyncVeredict::DownloadToLocal;
+		}
+		else if linked_file.local_file.is_some() && linked_file.remote_file.is_none()
+		{
+			linked_file.sync_veredict = SyncVeredict::UploadToRemote;
+		}
+		else if linked_file.local_file.is_some() && linked_file.remote_file.is_some()
+		{
+			let local_date_modified = linked_file.local_file.unwrap().date_modified;
+			let remote_date_modified = linked_file.remote_file.unwrap().date_modified;
+
+			println!("l: {}, r: {}, {}", local_date_modified.timestamp(), remote_date_modified.timestamp(), linked_file.relative_path);
+
+			if local_date_modified.timestamp() == remote_date_modified.timestamp()
+			{
+				linked_file.sync_veredict = SyncVeredict::DoNothing;
+			}
+			else if local_date_modified.timestamp() < remote_date_modified.timestamp()
+			{
+				linked_file.sync_veredict = SyncVeredict::UploadToRemote;
+			}
+			else
+			{
+				linked_file.sync_veredict = SyncVeredict::DownloadToLocal;
+			}
+		}
+		else
+		{
+			println!("[ERROR] No idea what to do with this file: {}", linked_file.relative_path);
+		}
+
+		new_linked_files_list.push(linked_file);
+	}
+
+	new_linked_files_list
 }
