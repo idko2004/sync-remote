@@ -2,12 +2,12 @@ use std::fs;
 
 pub struct SyncLocation
 {
-	remote: String,
-	name: String,
-	remote_path: String,
-	local_path: String,
-	remote_username: String,
-	remote_password: String,
+	pub remote: String,
+	pub name: String,
+	pub remote_path: String,
+	pub local_path: String,
+	pub remote_username: String,
+	pub remote_password: String,
 }
 
 

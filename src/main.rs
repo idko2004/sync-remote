@@ -8,6 +8,7 @@ struct File
 {
 	_directory: String,
 	fullpath: String,
+	relative_path: String,
 	date_modified: DateTime<Utc>,
 	_ftp_file: Option<list::File>,
 }
@@ -26,7 +27,9 @@ fn main()
 		}
 	};
 
-	let mut ftp_stream = match FtpStream::connect("192.168.0.201:8888")
+	let current_sync_location = config.get(0).unwrap();
+
+	let mut ftp_stream = match FtpStream::connect(current_sync_location.remote.clone())
 	{
 		Ok(value) => value,
 		Err(error) =>
@@ -36,7 +39,7 @@ fn main()
 		}
 	};
 
-	match ftp_stream.login("j6", "patata")
+	match ftp_stream.login(current_sync_location.remote_username.clone(), current_sync_location.remote_password.clone())
 	{
 		Ok(_) =>
 		{
@@ -62,13 +65,13 @@ fn main()
 	println!("Directorio actual: {directory}");
 	*/
 
-	let directory = String::from("/Music");
-	let all_files = get_all_files_recursive_from(&directory, &mut ftp_stream);
+	let all_files = get_all_files_recursive_from(&current_sync_location.remote_path.clone(), &mut ftp_stream);
 
 	println!("All files:");
 	for file in all_files
 	{
-		println!("{} {}",file.date_modified.to_string(), file.fullpath);
+		//println!("{} {}",file.date_modified.to_string(), file.fullpath);
+		println!("{}\n{}\n",file.relative_path, file.fullpath);
 	}
 
 }
@@ -116,7 +119,8 @@ fn get_all_files_recursive_from(directory: &String, ftp_stream: &mut FtpStream) 
 							File
 							{
 								_directory: current_directory.clone(),
-								fullpath: fullpath,
+								fullpath: fullpath.clone(),
+								relative_path: fullpath.clone().replace(directory, ""),
 								date_modified: date_modified,
 								_ftp_file: Some(ftp_file.clone()),
 							}
