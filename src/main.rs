@@ -28,7 +28,7 @@ fn main()
 
 	if selected == remote_names.len() - 1
 	{
-		println!("TODO: Añadir nuevo remote");
+		println!("TODO: Add new remote ui");
 		return;
 	}
 
@@ -37,7 +37,7 @@ fn main()
 		Some(value) => value,
 		None =>
 		{
-			println!("No se pudo acceder al elemento en el índice {selected} de las localizaciones de sincronización");
+			println!("[ERROR] Failed to get access to the sync location at the index {selected}");
 			return;
 		}
 	};

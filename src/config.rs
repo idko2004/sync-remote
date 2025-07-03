@@ -23,13 +23,13 @@ pub fn read_config() -> Option<Vec<SyncLocation>>
 		Ok(value) => value,
 		Err(_) =>
 		{
-			println!("No parece haber configuración guardada, guardando configuración por defecto...");
+			println!("Looks like there isn't a config file saved, creating a default one...");
 			match save_default_config()
 			{
 				Some(value) => value,
 				None =>
 				{
-					println!("No se pudo guardar la configuración por defecto!!");
+					println!("[ERROR] Failed to save default config file!!");
 					return None;
 				}
 			}
@@ -41,7 +41,7 @@ pub fn read_config() -> Option<Vec<SyncLocation>>
 		Ok(value) => value,
 		Err(error) =>
 		{
-			println!("Error al interpretar la configuración como json, {}", error);
+			println!("[ERROR] Failed to parse config as json, {}", error);
 			return None;
 		}
 	};
@@ -51,7 +51,7 @@ pub fn read_config() -> Option<Vec<SyncLocation>>
 		Some(value) => value,
 		None =>
 		{
-			println!("La configuración json debe ser un array!");
+			println!("[ERROR] JSON config should be an array!");
 			return None;
 		}
 	};
@@ -73,14 +73,14 @@ pub fn read_config() -> Option<Vec<SyncLocation>>
 							Some(value) => value,
 							None =>
 							{
-								println!("Some elements of the config file are invalid! - remote should be a string!");
+								println!("[ERROR] Some elements of the config file are invalid! - remote should be a string!");
 								continue;
 							}
 						}
 					},
 					None =>
 					{
-						println!("Some elements of the config file are invalid! - Failed to obtain remote value");
+						println!("[ERROR] Some elements of the config file are invalid! - Failed to obtain remote value");
 						continue;
 					}
 				};
@@ -93,14 +93,14 @@ pub fn read_config() -> Option<Vec<SyncLocation>>
 							Some(value) => value,
 							None =>
 							{
-								println!("Some elements of the config file are invalid! - name should be a string!");
+								println!("[ERROR] Some elements of the config file are invalid! - name should be a string!");
 								continue;
 							}
 						}
 					},
 					None =>
 					{
-						println!("Some elements of the config file are invalid! - Failed to obtain name value");
+						println!("[ERROR] Some elements of the config file are invalid! - Failed to obtain name value");
 						continue;
 					}
 				};
@@ -113,14 +113,14 @@ pub fn read_config() -> Option<Vec<SyncLocation>>
 							Some(value) => value,
 							None =>
 							{
-								println!("Some elements of the config file are invalid! - remote_path should be a string!");
+								println!("[ERROR] Some elements of the config file are invalid! - remote_path should be a string!");
 								continue;
 							}
 						}
 					},
 					None =>
 					{
-						println!("Some elements of the config file are invalid! - Failed to obtain remote_path value");
+						println!("[ERROR] Some elements of the config file are invalid! - Failed to obtain remote_path value");
 						continue;
 					}
 				};
@@ -133,14 +133,14 @@ pub fn read_config() -> Option<Vec<SyncLocation>>
 							Some(value) => value,
 							None =>
 							{
-								println!("Some elements of the config file are invalid! - local_path should be a string!");
+								println!("[ERROR] Some elements of the config file are invalid! - local_path should be a string!");
 								continue;
 							}
 						}
 					},
 					None =>
 					{
-						println!("Some elements of the config file are invalid! - Failed to obtain remote value");
+						println!("[ERROR] Some elements of the config file are invalid! - Failed to obtain remote value");
 						continue;
 					}
 				};
@@ -153,14 +153,14 @@ pub fn read_config() -> Option<Vec<SyncLocation>>
 							Some(value) => value,
 							None =>
 							{
-								println!("Some elements of the config file are invalid! - remote_username should be a string!");
+								println!("[ERROR] Some elements of the config file are invalid! - remote_username should be a string!");
 								continue;
 							}
 						}
 					},
 					None =>
 					{
-						println!("Some elements of the config file are invalid! - Failed to obtain remote_username value");
+						println!("[ERROR] Some elements of the config file are invalid! - Failed to obtain remote_username value");
 						continue;
 					}
 				};
@@ -173,14 +173,14 @@ pub fn read_config() -> Option<Vec<SyncLocation>>
 							Some(value) => value,
 							None =>
 							{
-								println!("Some elements of the config file are invalid! - remote_password should be a string!");
+								println!("[ERROR] Some elements of the config file are invalid! - remote_password should be a string!");
 								continue;
 							}
 						}
 					},
 					None =>
 					{
-						println!("Some elements of the config file are invalid! - Failed to obtain remote_password value");
+						println!("[ERROR] Some elements of the config file are invalid! - Failed to obtain remote_password value");
 						continue;
 					}
 				};
@@ -200,7 +200,7 @@ pub fn read_config() -> Option<Vec<SyncLocation>>
 			},
 			None =>
 			{
-				println!("Some elements of the config file are invalid!");
+				println!("[ERROR] Some elements of the config file are invalid!");
 			}
 		}
 	}
@@ -216,7 +216,7 @@ fn save_default_config() -> Option<String>
 		Ok(_) => (),
 		Err(error) =>
 		{
-			println!("Error al guardar la configuración!! {error}");
+			println!("[ERROR] Failed to save config file!! {error}");
 			return None;
 		}
 	}

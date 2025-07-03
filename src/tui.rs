@@ -63,7 +63,7 @@ pub fn start_tui_blocking(selectable_options: &Vec<String>) -> Option<usize>
 		Ok(_) => (),
 		Err(error) =>
 		{
-			println!("Error al activar modo crudo!! {error}");
+			println!("[ERROR] Failed to enable raw mode!! {error}");
 			return None;
 		}
 	}
@@ -82,7 +82,7 @@ pub fn start_tui_blocking(selectable_options: &Vec<String>) -> Option<usize>
 			Err(error) =>
 			{
 				let _ = disable_raw_mode();
-				println!("Error al leer input!! {error}");
+				println!("[ERROR] Failed to read input!! {error}");
 				return None;
 			}
 		};
@@ -244,14 +244,14 @@ fn draw_options(selectable_options: &Vec<String>, index_selected_option: usize, 
 		let _ = queue!(stdout, MoveTo(column, row));
 		if index_selected_option != i
 		{
-			let _ = queue!(stdout, Print(format!(" _ {item}" )));
+			let _ = queue!(stdout, Print(format!(" -  {item}" )));
 		}
 		else
 		{
-			let _ = queue!(stdout, SetBackgroundColor(Color::White));
-			let _ = queue!(stdout, SetForegroundColor(Color::Black));
+			let _ = queue!(stdout, SetBackgroundColor(Color::DarkBlue));
+			let _ = queue!(stdout, SetForegroundColor(Color::White));
 			let _ = queue!(stdout, SetAttribute(Attribute::Bold));
-			let _ = queue!(stdout, Print(format!(" > {item} ")));
+			let _ = queue!(stdout, Print(format!(" -> {item} ")));
 			let _ = queue!(stdout, SetAttribute(Attribute::Reset));
 			let _ = queue!(stdout, SetForegroundColor(Color::Reset));
 			let _ = queue!(stdout, SetBackgroundColor(Color::Reset));

@@ -401,7 +401,7 @@ fn link_all_files(all_remote_files: &Vec<File>, all_local_files: &Vec<File>) -> 
 					relative_path: remote_file.relative_path.clone(),
 					local_file: None,
 					remote_file: Some(remote_file.clone()),
-					sync_veredict: SyncVeredict::NotDecidedYet,
+					sync_veredict: SyncVeredict::DownloadToLocal,
 				}
 			)
 		}
@@ -435,7 +435,7 @@ fn link_all_files(all_remote_files: &Vec<File>, all_local_files: &Vec<File>) -> 
 					relative_path: local_file.relative_path.clone(),
 					local_file: Some(local_file.clone()),
 					remote_file: None,
-					sync_veredict: SyncVeredict::NotDecidedYet,
+					sync_veredict: SyncVeredict::UploadToRemote,
 				}
 			)
 		}
