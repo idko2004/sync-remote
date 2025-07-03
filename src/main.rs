@@ -1,3 +1,5 @@
+use crate::sync::start_sync_blocking;
+
 mod sync;
 mod config;
 mod tui;
@@ -12,7 +14,7 @@ fn main()
 	};
 
 	let mut remote_names: Vec<String> = Vec::with_capacity(sync_locations.len() + 1);
-	for location in sync_locations
+	for location in &sync_locations
 	{
 		remote_names.push(location.name.clone());
 	}
@@ -30,5 +32,16 @@ fn main()
 		return;
 	}
 
+	let selected_sync_location = match sync_locations.get(selected)
+	{
+		Some(value) => value,
+		None =>
+		{
+			println!("No se pudo acceder al elemento en el índice {selected} de las localizaciones de sincronización");
+			return;
+		}
+	};
+
+	start_sync_blocking(selected_sync_location);
 
 }

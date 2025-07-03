@@ -1,5 +1,6 @@
 use std::fs;
 
+#[derive(Clone)]
 pub struct SyncLocation
 {
 	pub remote: String,

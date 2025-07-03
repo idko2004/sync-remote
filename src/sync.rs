@@ -1,82 +1,109 @@
-use std::str::FromStr;
+use std::{fs, str::FromStr};
 use chrono::{DateTime, Utc};
 use suppaftp::{FtpStream, list};
 
-use crate::config;
+use crate::config::SyncLocation;
 
+#[derive(Clone)]
+enum FileHandler
+{
+	FtpFile(Option<list::File>),
+	LocalFile, //fs::DirEntry no se puede clonar, por lo que la forma de manejar el archivo debería de ser cargar de nuevo a partir de fullpath
+}
+
+#[derive(Clone)]
 struct File
 {
 	_directory: String,
 	fullpath: String,
 	relative_path: String,
 	date_modified: DateTime<Utc>,
-	_ftp_file: Option<list::File>,
+	handler: FileHandler,
 }
 
-pub fn main()
+enum SyncVeredict
 {
-	println!("Hello, world!");
+	UploadToRemote,
+	DownloadToLocal,
+	NotDecidedYet,
+}
 
-	let config = match config::read_config()
-	{
-		Some(value) => value,
-		None =>
-		{
-			println!("Error al cargar la configuración");
-			return;
-		}
-	};
+struct LinkedFile
+{
+	relative_path: String,
+	local_file: Option<File>,
+	remote_file: Option<File>,
+	sync_veredict: SyncVeredict,
+}
 
-	let current_sync_location = config.get(0).unwrap();
-
-	let mut ftp_stream = match FtpStream::connect(current_sync_location.remote.clone())
+pub fn start_sync_blocking(sync_location: &SyncLocation)
+{
+	println!("\nRemote: {}", sync_location.name);
+	println!("Host: {}", sync_location.remote);
+	println!("Connecting...");
+	let mut ftp_stream = match FtpStream::connect(sync_location.remote.clone())
 	{
 		Ok(value) => value,
 		Err(error) =>
 		{
-			println!("Error al conectarse al servidor, {}", error);
+			println!("Failed to connect to server, {}", error);
 			return;
 		}
 	};
 
-	match ftp_stream.login(current_sync_location.remote_username.clone(), current_sync_location.remote_password.clone())
+	println!("Logging in...");
+	match ftp_stream.login(sync_location.remote_username.clone(), sync_location.remote_password.clone())
 	{
 		Ok(_) =>
 		{
-			println!("Sesión iniciada!");
+			//println!("¡Sesión iniciada!");
 			()
 		}
 		Err(error) =>
 		{
-			println!("Error al iniciar sesión, {}", error);
+			println!("Failed to log in, {}", error);
 			return;
 		}
 	}
-	/*
-	let directory = match ftp_stream.pwd()
+
+	println!("Listing remote files...");
+	let all_remote_files = get_all_remote_files_recursive_from(&sync_location.remote_path.clone(), &mut ftp_stream);
+
+	println!("Listing local files...");
+	let all_local_files = get_all_local_files_recursive_from(&sync_location.local_path.clone());
+
+	println!("Linking files... (this might take a while)");
+	let all_files_linked = link_all_files(&all_remote_files, &all_local_files);
+
+	println!("\n\nAll linked files:");
+	for file in &all_files_linked
 	{
-		Ok(value) => value,
-		Err(error) =>
+		if file.local_file.is_some() && file.remote_file.is_some()
 		{
-			println!("Error al obtener directorio actual, {}", error);
-			return;
+			println!("{}\n{}\n{}\n",file.relative_path, file.remote_file.clone().unwrap().fullpath, file.local_file.clone().unwrap().fullpath);
 		}
-	};
-	println!("Directorio actual: {directory}");
-	*/
-
-	let all_files = get_all_files_recursive_from(&current_sync_location.remote_path.clone(), &mut ftp_stream);
-
-	println!("All files:");
-	for file in all_files
-	{
-		//println!("{} {}",file.date_modified.to_string(), file.fullpath);
-		println!("{}\n{}\n",file.relative_path, file.fullpath);
 	}
 
+	println!("\n\nFiles only on remote:");
+	for file in &all_files_linked
+	{
+		if file.local_file.is_none() && file.remote_file.is_some()
+		{
+			println!("{}\n{}\n{}\n",file.relative_path, file.remote_file.clone().unwrap().fullpath, "(None)");
+		}
+	}
+
+	println!("\n\nFiles only on local:");
+	for file in &all_files_linked
+	{
+		if file.local_file.is_some() && file.remote_file.is_none()
+		{
+			println!("{}\n{}\n{}\n",file.relative_path, "(None)", file.local_file.clone().unwrap().fullpath);
+		}
+	}
 }
 
-fn get_all_files_recursive_from(directory: &String, ftp_stream: &mut FtpStream) -> Vec<File>
+fn get_all_remote_files_recursive_from(directory: &String, ftp_stream: &mut FtpStream) -> Vec<File>
 {
 	let mut current_directory: String = directory.clone();
 	let mut tree: Vec<File> = Vec::new();
@@ -86,13 +113,13 @@ fn get_all_files_recursive_from(directory: &String, ftp_stream: &mut FtpStream) 
 	
 	loop
 	{
-		match list_directory(&current_directory, ftp_stream)
+		match list_remote_directory(&current_directory, ftp_stream)
 		{
 			Some(files_vector) =>
 			{
 				if files_vector.is_empty()
 				{
-					println!("Directory is empty: {}", current_directory);
+					//println!("Directory is empty: {}", current_directory);
 					()
 				}
 
@@ -122,7 +149,7 @@ fn get_all_files_recursive_from(directory: &String, ftp_stream: &mut FtpStream) 
 								fullpath: fullpath.clone(),
 								relative_path: fullpath.clone().replace(directory, ""),
 								date_modified: date_modified,
-								_ftp_file: Some(ftp_file.clone()),
+								handler: FileHandler::FtpFile(Some(ftp_file.clone())),
 							}
 						);
 					}
@@ -130,7 +157,7 @@ fn get_all_files_recursive_from(directory: &String, ftp_stream: &mut FtpStream) 
 			},
 			None =>
 			{
-				println!("Failed to list directory {}", current_directory);
+				println!("[ERROR] Failed to list remote directory {}", current_directory);
 			}
 		}
 
@@ -139,7 +166,7 @@ fn get_all_files_recursive_from(directory: &String, ftp_stream: &mut FtpStream) 
 			Some(value) => value.clone(),
 			None =>
 			{
-				println!("Directories list is empty, no more directories to explore");
+				//println!("Directories list is empty, no more directories to explore");
 				break;
 			}
 		};	
@@ -149,14 +176,14 @@ fn get_all_files_recursive_from(directory: &String, ftp_stream: &mut FtpStream) 
 	tree
 }
 
-fn list_directory(directory: &String, ftp_stream: &mut FtpStream) -> Option<Vec<list::File>>
+fn list_remote_directory(directory: &String, ftp_stream: &mut FtpStream) -> Option<Vec<list::File>>
 {
 	let directory_listing = match ftp_stream.list(Some(directory.as_str()))
 	{
 		Ok(value) => value,
 		Err(error) =>
 		{
-			println!("No se pudo listar el contenido del directorio {directory}, {error}");
+			println!("[ERROR] Failed to list content of directory {directory}, {error}");
 			return None;
 		}
 	};
@@ -173,11 +200,246 @@ fn list_directory(directory: &String, ftp_stream: &mut FtpStream) -> Option<Vec<
 			},
 			Err(error) =>
 			{
-				println!("Error al interpretar el directorio actual, {}", error);
+				println!("[ERROR] Failed to parse remote directory, {}", error);
 				continue;
 			}
 		}
 	}
 
 	Some(directory_contents)
+}
+
+fn get_all_local_files_recursive_from(directory: &String) -> Vec<File>
+{
+	let mut current_directory = directory.clone();
+	let mut tree: Vec<File> = Vec::new();
+	
+	let mut directories: Vec<String> = Vec::new();
+	let mut i: usize = 0;
+
+	loop
+	{
+		match list_local_directory(&current_directory) //Obtener un iterador que contiene todos los elementos dentro de un directorio
+		{
+			Some(value) =>
+			{
+				for item in value //Iterar por cada elemento ("archivo") en un directorio
+				{
+					match item
+					{
+						Ok(dir_entry) =>
+						{
+							let fullpath = match dir_entry.file_name().into_string() //Obtener la ruta completa
+							{
+								Ok(value) =>
+								{
+									if current_directory == "/"
+									{
+										format!("{}{}", current_directory, value)
+									}
+									else
+									{
+										format!("{}/{}", current_directory, value)
+									}
+								},
+								Err(_) =>
+								{
+									println!("[ERROR] Failed to get file name of something in local directory");
+									continue;
+								}
+							};
+
+							match dir_entry.file_type()
+							{
+								Ok(value) =>
+								{
+									//Si es un directorio añadir a la lista de directorios a explorar para explorar en otra iteración.
+									if value.is_dir()
+									{
+										directories.push(fullpath);
+									}
+									else if value.is_file()
+									{
+										//Conseguir la fecha modificada
+										let date_modified = match dir_entry.metadata()
+										{
+											Ok(metadata) =>
+											{
+												match metadata.modified()
+												{
+													Ok(modified) =>
+													{
+														let date_modified: DateTime<Utc> = modified.into();
+														date_modified
+													},
+													Err(error) =>
+													{
+														println!("[ERROR] Failed to get last modified time of file in local directory \"{}\", {}", fullpath, error);
+														continue;
+													}
+												}
+											},
+											Err(error) =>
+											{
+												println!("[ERROR] Failed to get metadata of file in local directory \"{}\", {}", fullpath, error);
+												continue;
+											}
+										};
+
+										//Añadir al árbol de archivos que en realidad no es un árbol y es una lista nomás.
+										tree.push
+										(
+											File
+											{
+												_directory: current_directory.clone(),
+												fullpath: fullpath.clone(),
+												relative_path: fullpath.clone().replace(directory, ""),
+												date_modified: date_modified,
+												handler: FileHandler::LocalFile,
+											}
+										);
+									}
+								},
+								Err(error) =>
+								{
+									println!("[ERROR] Failed to get file type of something in local directory, {}", error);
+								}
+							}
+						},
+						Err(error) =>
+						{
+							println!("[ERROR] Failed to access something in local directory, {}", error);
+						}
+					}
+				}
+			},
+			None =>
+			{
+				println!("[ERROR] Failed to list local directory {}", current_directory);
+			}
+		}
+
+		//Cambiar al siguiente directorio en la lista de directorios
+		current_directory = match directories.get(i)
+		{
+			Some(value) => value.clone(),
+			None =>
+			{
+				//println!("Directories list is empty, no more directories to explore");
+				break;
+			}
+		};	
+		i += 1;
+	}
+
+	tree
+}
+
+fn list_local_directory(directory: &String) -> Option<fs::ReadDir>
+{
+	match fs::read_dir(directory)
+	{
+		Ok(value) => Some(value),
+		Err(error) =>
+		{
+			println!("Failed to read local directory, {error}");
+			None
+		}
+	}
+}
+
+fn link_all_files(all_remote_files: &Vec<File>, all_local_files: &Vec<File>) -> Vec<LinkedFile>
+{
+	let mut all_linked_files = Vec::with_capacity(all_remote_files.len());
+
+	//Linkear todos los que tienen equivalentes en ambos lados
+	for remote_file in all_remote_files
+	{
+		for local_file in all_local_files
+		{
+			if remote_file.relative_path == local_file.relative_path
+			{
+				all_linked_files.push
+				(
+					LinkedFile
+					{
+						relative_path: remote_file.relative_path.clone(),
+						local_file: Some(local_file.clone()),
+						remote_file: Some(remote_file.clone()),
+						sync_veredict: SyncVeredict::NotDecidedYet,
+					}
+				)
+			}
+		}
+	}
+
+	//Encontrar archivos que estén en el remote pero no estén en local
+	for remote_file in all_remote_files
+	{
+		let mut found = false;
+		for linked_file in &all_linked_files
+		{
+			let linked_remote_file = match &linked_file.remote_file
+			{
+				Some(value) => value,
+				None => continue,
+			};
+
+			if remote_file.fullpath == linked_remote_file.fullpath
+			{
+				found = true;
+				break;
+			}
+		}
+
+		if !found
+		{
+			all_linked_files.push
+			(
+				LinkedFile
+				{
+					relative_path: remote_file.relative_path.clone(),
+					local_file: None,
+					remote_file: Some(remote_file.clone()),
+					sync_veredict: SyncVeredict::NotDecidedYet,
+				}
+			)
+		}
+	}
+
+	//Encontrar archivos que estén en local pero no estén en remote
+	for local_file in all_local_files
+	{
+		let mut found = false;
+		for linked_file in &all_linked_files
+		{
+			let linked_remote_file = match &linked_file.local_file
+			{
+				Some(value) => value,
+				None => continue,
+			};
+
+			if local_file.fullpath == linked_remote_file.fullpath
+			{
+				found = true;
+				break;
+			}
+		}
+
+		if !found
+		{
+			all_linked_files.push
+			(
+				LinkedFile
+				{
+					relative_path: local_file.relative_path.clone(),
+					local_file: Some(local_file.clone()),
+					remote_file: None,
+					sync_veredict: SyncVeredict::NotDecidedYet,
+				}
+			)
+		}
+	}
+
+	all_linked_files
 }
