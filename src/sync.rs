@@ -1,5 +1,5 @@
 use std::{fs, str::FromStr};
-use chrono::{DateTime, Utc};
+use chrono::{DateTime, Timelike, Utc};
 use suppaftp::{FtpStream, list};
 
 use crate::config::SyncLocation;
@@ -82,13 +82,13 @@ pub fn start_sync_blocking(sync_location: &SyncLocation)
 	let all_files_linked = set_sync_veredicts(all_files_linked);
 	
 
-	
+
 	println!("\n\nAll linked files:");
 	for file in &all_files_linked
 	{
 		if file.local_file.is_some() && file.remote_file.is_some()
 		{
-			println!("{:?}\n{}\n{}\n{}\n",file.sync_veredict, file.relative_path, file.remote_file.clone().unwrap().fullpath, file.local_file.clone().unwrap().fullpath);
+			println!("{:?}\n{}\nremote:\t{}\nlocal:\t{}\n",file.sync_veredict, file.relative_path, file.remote_file.clone().unwrap().date_modified, file.local_file.clone().unwrap().date_modified);
 		}
 	}
 
@@ -97,7 +97,7 @@ pub fn start_sync_blocking(sync_location: &SyncLocation)
 	{
 		if file.local_file.is_none() && file.remote_file.is_some()
 		{
-			println!("{:?}\n{}\n{}\n{}\n",file.sync_veredict,file.relative_path, file.remote_file.clone().unwrap().fullpath, "(None)");
+			println!("{:?}\n{}\nremote:\t{}\nlocal:\t{}\n",file.sync_veredict,file.relative_path, file.remote_file.clone().unwrap().date_modified, "(None)");
 		}
 	}
 
@@ -106,7 +106,7 @@ pub fn start_sync_blocking(sync_location: &SyncLocation)
 	{
 		if file.local_file.is_some() && file.remote_file.is_none()
 		{
-			println!("{:?}\n{}\n{}\n{}\n",file.sync_veredict,file.relative_path, "(None)", file.local_file.clone().unwrap().fullpath);
+			println!("{:?}\n{}\nremote:\t{}\nlocal:\t{}\n",file.sync_veredict,file.relative_path, "(None)", file.local_file.clone().unwrap().date_modified);
 		}
 	}
 
@@ -279,6 +279,27 @@ fn get_all_local_files_recursive_from(directory: &String) -> Vec<File>
 													Ok(modified) =>
 													{
 														let date_modified: DateTime<Utc> = modified.into();
+														let date_modified = match date_modified.with_second(0)
+														{
+															Some(value) =>
+															{
+																match value.with_nanosecond(0)
+																{
+																	Some(value) => value,
+																	None =>
+																	{
+																		println!("[ERROR] Failed to trim local file nanoseconds");
+																		continue;
+																	}
+																}
+															},
+															None =>
+															{
+																println!("[ERROR] Failed to trim local file seconds");
+																continue;
+															}
+														};
+														//println!("{}", date_modified.time().to_string());
 														date_modified
 													},
 													Err(error) =>
@@ -351,7 +372,7 @@ fn list_local_directory(directory: &String) -> Option<fs::ReadDir>
 		Ok(value) => Some(value),
 		Err(error) =>
 		{
-			println!("Failed to read local directory, {error}");
+			println!("[ERROR] Failed to read local directory, {error}");
 			None
 		}
 	}
@@ -496,7 +517,7 @@ fn set_sync_veredicts(all_linked_files: Vec<LinkedFile>) -> Vec<LinkedFile>
 				}
 			};
 
-			println!("l: {}, r: {}, {}", local_date_modified.timestamp(), remote_date_modified.timestamp(), linked_file.relative_path);
+			//println!("l: {}, r: {}, {}", local_date_modified.timestamp(), remote_date_modified.timestamp(), linked_file.relative_path);
 
 			if local_date_modified.timestamp() == remote_date_modified.timestamp()
 			{
@@ -504,11 +525,11 @@ fn set_sync_veredicts(all_linked_files: Vec<LinkedFile>) -> Vec<LinkedFile>
 			}
 			else if local_date_modified.timestamp() < remote_date_modified.timestamp()
 			{
-				linked_file.sync_veredict = SyncVeredict::UploadToRemote;
+				linked_file.sync_veredict = SyncVeredict::DownloadToLocal;
 			}
 			else
 			{
-				linked_file.sync_veredict = SyncVeredict::DownloadToLocal;
+				linked_file.sync_veredict = SyncVeredict::UploadToRemote;
 			}
 		}
 		else
