@@ -1,3 +1,4 @@
+use core::sync;
 use std::{fs, str::FromStr};
 use chrono::{DateTime, Timelike, Utc};
 use suppaftp::{FtpStream, list};
@@ -14,7 +15,7 @@ enum FileHandler
 #[derive(Clone)]
 struct File
 {
-	_directory: String,
+	directory: String,
 	fullpath: String,
 	relative_path: String,
 	date_modified: DateTime<Utc>,
@@ -34,6 +35,7 @@ enum SyncVeredict
 struct LinkedFile
 {
 	relative_path: String,
+	relative_directory: String,
 	local_file: Option<File>,
 	remote_file: Option<File>,
 	sync_veredict: SyncVeredict,
@@ -43,7 +45,7 @@ pub fn start_sync_blocking(sync_location: &SyncLocation)
 {
 	println!("\nRemote: {}", sync_location.name);
 	println!("Host: {}\n", sync_location.remote);
-	println!("-> Connecting...");
+	println!("* Connecting...");
 	let mut ftp_stream = match FtpStream::connect(sync_location.remote.clone())
 	{
 		Ok(value) => value,
@@ -54,7 +56,7 @@ pub fn start_sync_blocking(sync_location: &SyncLocation)
 		}
 	};
 
-	println!("-> Logging in...");
+	println!("* Logging in...");
 	match ftp_stream.login(sync_location.remote_username.clone(), sync_location.remote_password.clone())
 	{
 		Ok(_) =>
@@ -69,20 +71,22 @@ pub fn start_sync_blocking(sync_location: &SyncLocation)
 		}
 	}
 
-	println!("-> Listing remote files...");
+	println!("* Listing remote files...");
 	let all_remote_files = get_all_remote_files_recursive_from(&sync_location.remote_path.clone(), &mut ftp_stream);
 
-	println!("-> Listing local files...");
+	println!("* Listing local files...");
 	let all_local_files = get_all_local_files_recursive_from(&sync_location.local_path.clone());
 
-	println!("-> Linking files...");
-	let all_files_linked = link_all_files(&all_remote_files, &all_local_files);
+	println!("* Linking files...");
+	let all_files_linked = link_all_files(&all_remote_files, &all_local_files, sync_location);
 
-	println!("-> Calculating how to synchronize...");
+	println!("* Thinking how to sync...");
 	let all_files_linked = set_sync_veredicts(all_files_linked);
 	
+	println!("* Syncing...");
+	sync_files(&all_files_linked, sync_location, &mut ftp_stream);
 
-
+/*
 	println!("\n\nAll linked files:");
 	for file in &all_files_linked
 	{
@@ -109,7 +113,7 @@ pub fn start_sync_blocking(sync_location: &SyncLocation)
 			println!("{:?}\n{}\nremote:\t{}\nlocal:\t{}\n",file.sync_veredict,file.relative_path, "(None)", file.local_file.clone().unwrap().date_modified);
 		}
 	}
-
+*/
 }
 
 fn get_all_remote_files_recursive_from(directory: &String, ftp_stream: &mut FtpStream) -> Vec<File>
@@ -154,7 +158,7 @@ fn get_all_remote_files_recursive_from(directory: &String, ftp_stream: &mut FtpS
 						(
 							File
 							{
-								_directory: current_directory.clone(),
+								directory: current_directory.clone(),
 								fullpath: fullpath.clone(),
 								relative_path: fullpath.clone().replace(directory, ""),
 								date_modified: date_modified,
@@ -321,7 +325,7 @@ fn get_all_local_files_recursive_from(directory: &String) -> Vec<File>
 										(
 											File
 											{
-												_directory: current_directory.clone(),
+												directory: current_directory.clone(),
 												fullpath: fullpath.clone(),
 												relative_path: fullpath.clone().replace(directory, ""),
 												date_modified: date_modified,
@@ -378,7 +382,7 @@ fn list_local_directory(directory: &String) -> Option<fs::ReadDir>
 	}
 }
 
-fn link_all_files(all_remote_files: &Vec<File>, all_local_files: &Vec<File>) -> Vec<LinkedFile>
+fn link_all_files(all_remote_files: &Vec<File>, all_local_files: &Vec<File>, sync_location: &SyncLocation) -> Vec<LinkedFile>
 {
 	let mut all_linked_files = Vec::with_capacity(all_remote_files.len());
 
@@ -394,6 +398,7 @@ fn link_all_files(all_remote_files: &Vec<File>, all_local_files: &Vec<File>) -> 
 					LinkedFile
 					{
 						relative_path: remote_file.relative_path.clone(),
+						relative_directory: get_relative_directory(remote_file, &sync_location.remote_path),
 						local_file: Some(local_file.clone()),
 						remote_file: Some(remote_file.clone()),
 						sync_veredict: SyncVeredict::NotDecidedYet,
@@ -429,6 +434,7 @@ fn link_all_files(all_remote_files: &Vec<File>, all_local_files: &Vec<File>) -> 
 				LinkedFile
 				{
 					relative_path: remote_file.relative_path.clone(),
+					relative_directory: get_relative_directory(remote_file, &sync_location.remote_path),
 					local_file: None,
 					remote_file: Some(remote_file.clone()),
 					sync_veredict: SyncVeredict::DownloadToLocal,
@@ -463,6 +469,7 @@ fn link_all_files(all_remote_files: &Vec<File>, all_local_files: &Vec<File>) -> 
 				LinkedFile
 				{
 					relative_path: local_file.relative_path.clone(),
+					relative_directory: get_relative_directory(local_file, &sync_location.local_path),
 					local_file: Some(local_file.clone()),
 					remote_file: None,
 					sync_veredict: SyncVeredict::UploadToRemote,
@@ -541,4 +548,96 @@ fn set_sync_veredicts(all_linked_files: Vec<LinkedFile>) -> Vec<LinkedFile>
 	}
 
 	new_linked_files_list
+}
+
+//Debe asegurarse de que ambas rutas provengan del mismo lugar.
+//Si es que file es de un remote, entonces sync_location_path debería venir de SyncLocation::remote_path,
+//Del mismo modo, si file es local, entonces sync_location_path debería venir de SyncLocation::local_path.
+fn get_relative_directory(file: &File, sync_location_path: &String) -> String
+{
+	file.directory.replace(sync_location_path, "")
+}
+
+fn sync_files(all_linked_files: &Vec<LinkedFile>, sync_location: &SyncLocation, ftp_stream: &mut FtpStream)
+{
+	upload_to_remote(all_linked_files, sync_location, ftp_stream);
+	download_to_local(all_linked_files, sync_location);
+}
+
+fn upload_to_remote(all_linked_files: &Vec<LinkedFile>, sync_location: &SyncLocation, ftp_stream: &mut FtpStream)
+{
+	for linked_file in all_linked_files
+	{
+		if linked_file.sync_veredict != SyncVeredict::UploadToRemote
+		{
+			continue;
+		}
+
+		println!(" -> Uploading: {}", linked_file.relative_path);
+
+		let remote_directory = format!("{}{}", sync_location.remote_path, linked_file.relative_directory);
+		let remote_fullpath = format!("{}{}", sync_location.remote_path, linked_file.relative_path);
+		//println!("{remote_directory}");
+
+		//Comprobar que el directorio existe
+		let directory_exists: bool = match ftp_stream.list(Some(remote_directory.as_str()))
+		{
+			Ok(_) => true,
+			Err(_) => false,
+		};
+
+		//Crear directorio si no existe
+		if !directory_exists
+		{
+			match ftp_stream.mkdir(remote_directory.clone())
+			{
+				Ok(_) =>
+				{
+					println!("[INFO] Created directory {}", remote_directory.clone());
+				},
+				Err(error) =>
+				{
+					println!("[ERROR] Failed to create remote directory ({}), {}", remote_directory.clone(), error);
+					continue;
+				}
+			}
+		}
+
+		//Cargar archivo local
+		let local_file = match &linked_file.local_file
+		{
+			Some(value) => value,
+			None =>
+			{
+				println!("[ERROR] Failed to access internal local file handler!");
+				continue;
+			}
+		};
+
+		let mut local_file_handler = match fs::File::open(local_file.fullpath.clone())
+		{
+			Ok(value) => value,
+			Err(error) =>
+			{
+				println!("[ERROR] Failed to open local file!! {}", error);
+				continue;
+			}
+		};
+
+		//Subir archivo a remote
+		match ftp_stream.put_file(remote_fullpath, &mut local_file_handler)
+		{
+			Ok(_) => (),
+			Err(error) =>
+			{
+				println!("[ERROR] Failed to upload file to remote, {}", error);
+				continue;
+			}
+		}
+	}
+}
+
+fn download_to_local(all_linked_files: &Vec<LinkedFile>, sync_location: &SyncLocation)
+{
+
 }
