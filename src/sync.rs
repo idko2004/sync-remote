@@ -42,19 +42,19 @@ struct LinkedFile
 pub fn start_sync_blocking(sync_location: &SyncLocation)
 {
 	println!("\nRemote: {}", sync_location.name);
-	println!("Host: {}", sync_location.remote);
-	println!("Connecting...");
+	println!("Host: {}\n", sync_location.remote);
+	println!("-> Connecting...");
 	let mut ftp_stream = match FtpStream::connect(sync_location.remote.clone())
 	{
 		Ok(value) => value,
 		Err(error) =>
 		{
-			println!("Failed to connect to server, {}", error);
+			println!("[ERROR] Failed to connect to server, {}", error);
 			return;
 		}
 	};
 
-	println!("Logging in...");
+	println!("-> Logging in...");
 	match ftp_stream.login(sync_location.remote_username.clone(), sync_location.remote_password.clone())
 	{
 		Ok(_) =>
@@ -64,21 +64,21 @@ pub fn start_sync_blocking(sync_location: &SyncLocation)
 		}
 		Err(error) =>
 		{
-			println!("Failed to log in, {}", error);
+			println!("[ERROR] Failed to log in, {}", error);
 			return;
 		}
 	}
 
-	println!("Listing remote files...");
+	println!("-> Listing remote files...");
 	let all_remote_files = get_all_remote_files_recursive_from(&sync_location.remote_path.clone(), &mut ftp_stream);
 
-	println!("Listing local files...");
+	println!("-> Listing local files...");
 	let all_local_files = get_all_local_files_recursive_from(&sync_location.local_path.clone());
 
-	println!("Linking files...");
+	println!("-> Linking files...");
 	let all_files_linked = link_all_files(&all_remote_files, &all_local_files);
 
-	println!("Calculating how to synchronize...");
+	println!("-> Calculating how to synchronize...");
 	let all_files_linked = set_sync_veredicts(all_files_linked);
 	
 
@@ -456,15 +456,10 @@ fn link_all_files(all_remote_files: &Vec<File>, all_local_files: &Vec<File>) -> 
 fn set_sync_veredicts(all_linked_files: Vec<LinkedFile>) -> Vec<LinkedFile>
 {
 	let mut new_linked_files_list: Vec<LinkedFile> = Vec::with_capacity(all_linked_files.len());
-	let mut i = 0;
-	loop
+	
+	for linked_file in &all_linked_files
 	{
-		let mut linked_file = match all_linked_files.get(i)
-		{
-			Some(value) => value.clone(),
-			None => break,
-		};
-		i += 1;
+		let mut linked_file = linked_file.clone();
 
 		if linked_file.sync_veredict != SyncVeredict::NotDecidedYet
 		{
@@ -482,8 +477,24 @@ fn set_sync_veredicts(all_linked_files: Vec<LinkedFile>) -> Vec<LinkedFile>
 		}
 		else if linked_file.local_file.is_some() && linked_file.remote_file.is_some()
 		{
-			let local_date_modified = linked_file.local_file.unwrap().date_modified;
-			let remote_date_modified = linked_file.remote_file.unwrap().date_modified;
+			let local_date_modified = match &linked_file.local_file
+			{
+				Some(file) => file.date_modified,
+				None =>
+				{
+					println!("[ERROR] somehow local file is none after comprobing that it's not??");
+					continue;
+				}
+			};
+			let remote_date_modified = match &linked_file.remote_file
+			{
+				Some(file) => file.date_modified,
+				None =>
+				{
+					println!("[ERROR] somehow remote file is none after comprobing that it's not??");
+					continue;
+				}
+			};
 
 			println!("l: {}, r: {}, {}", local_date_modified.timestamp(), remote_date_modified.timestamp(), linked_file.relative_path);
 
