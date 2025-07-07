@@ -1,47 +1,9 @@
-use std::{fs, str::FromStr, io::{self, Stdout, stdout, Write}, time::Duration};
+use std::{fs, str::FromStr, io::{self, Write}, time::Duration};
 use chrono::{DateTime, Timelike, Utc};
 use suppaftp::{FtpStream, list};
-use crossterm::
-{
-	cursor::
-	{
-		MoveTo,
-		Hide,
-		Show,
-	},
-	event::
-	{
-		Event,
-		KeyModifiers,
-		KeyCode,
-		read
-	},
-	execute,
-	queue,
-	style::
-	{
-		Color,
-		Print,
-		SetBackgroundColor,
-		SetForegroundColor,
-		SetAttribute,
-		Attribute,
-	},
-	terminal::
-	{
-		disable_raw_mode,
-		enable_raw_mode,
-		size,
-		Clear,
-		ClearType,
-		EnterAlternateScreen,
-		LeaveAlternateScreen
-	}
-};
-
+use crossterm::{queue, style::{Color, Print, SetForegroundColor, SetAttribute, Attribute}};
 
 use crate::config::SyncLocation;
-
 
 #[derive(Clone, Debug)]
 struct File

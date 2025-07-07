@@ -23,7 +23,7 @@ pub fn read_config() -> Option<Vec<SyncLocation>>
 		Ok(value) => value,
 		Err(_) =>
 		{
-			println!("Looks like there isn't a config file saved, creating a default one...");
+			println!("[INFO] Looks like there isn't a config file saved, creating a default one...");
 			match save_default_config()
 			{
 				Some(value) => value,
@@ -210,7 +210,7 @@ pub fn read_config() -> Option<Vec<SyncLocation>>
 
 fn save_default_config() -> Option<String>
 {
-	let default_config_contents = "[\n\t\n]"; //Un array vacío en json
+	let default_config_contents = "[]"; //Un array vacío en json
 	match fs::write(get_config_location(), default_config_contents)
 	{
 		Ok(_) => (),
