@@ -1,25 +1,55 @@
-use core::sync;
-use std::{fs, str::FromStr};
+use std::{fs, str::FromStr, io::{self, Stdout, stdout, Write}, time::Duration};
 use chrono::{DateTime, Timelike, Utc};
 use suppaftp::{FtpStream, list};
+use crossterm::
+{
+	cursor::
+	{
+		MoveTo,
+		Hide,
+		Show,
+	},
+	event::
+	{
+		Event,
+		KeyModifiers,
+		KeyCode,
+		read
+	},
+	execute,
+	queue,
+	style::
+	{
+		Color,
+		Print,
+		SetBackgroundColor,
+		SetForegroundColor,
+		SetAttribute,
+		Attribute,
+	},
+	terminal::
+	{
+		disable_raw_mode,
+		enable_raw_mode,
+		size,
+		Clear,
+		ClearType,
+		EnterAlternateScreen,
+		LeaveAlternateScreen
+	}
+};
+
 
 use crate::config::SyncLocation;
 
-#[derive(Clone)]
-enum FileHandler
-{
-	FtpFile(Option<list::File>),
-	LocalFile, //fs::DirEntry no se puede clonar, por lo que la forma de manejar el archivo debería de ser cargar de nuevo a partir de fullpath
-}
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 struct File
 {
 	directory: String,
 	fullpath: String,
 	relative_path: String,
 	date_modified: DateTime<Utc>,
-	handler: FileHandler,
 }
 
 #[derive(Clone, Copy, PartialEq, Debug)]
@@ -31,7 +61,7 @@ enum SyncVeredict
 	NotDecidedYet,
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 struct LinkedFile
 {
 	relative_path: String,
@@ -46,7 +76,7 @@ pub fn start_sync_blocking(sync_location: &SyncLocation)
 	println!("\nRemote: {}", sync_location.name);
 	println!("Host: {}\n", sync_location.remote);
 	println!("* Connecting...");
-	let mut ftp_stream = match FtpStream::connect(sync_location.remote.clone())
+	let ftp_stream = match FtpStream::connect(&sync_location.remote)
 	{
 		Ok(value) => value,
 		Err(error) =>
@@ -56,8 +86,10 @@ pub fn start_sync_blocking(sync_location: &SyncLocation)
 		}
 	};
 
+	let mut ftp_stream = ftp_stream.active_mode(Duration::from_secs(120));
+
 	println!("* Logging in...");
-	match ftp_stream.login(sync_location.remote_username.clone(), sync_location.remote_password.clone())
+	match ftp_stream.login(&sync_location.remote_username, &sync_location.remote_password)
 	{
 		Ok(_) =>
 		{
@@ -72,10 +104,10 @@ pub fn start_sync_blocking(sync_location: &SyncLocation)
 	}
 
 	println!("* Listing remote files...");
-	let all_remote_files = get_all_remote_files_recursive_from(&sync_location.remote_path.clone(), &mut ftp_stream);
+	let all_remote_files = get_all_remote_files_recursive_from(&sync_location.remote_path, &mut ftp_stream);
 
 	println!("* Listing local files...");
-	let all_local_files = get_all_local_files_recursive_from(&sync_location.local_path.clone());
+	let all_local_files = get_all_local_files_recursive_from(&sync_location.local_path);
 
 	println!("* Linking files...");
 	let all_files_linked = link_all_files(&all_remote_files, &all_local_files, sync_location);
@@ -86,6 +118,12 @@ pub fn start_sync_blocking(sync_location: &SyncLocation)
 	println!("* Syncing...");
 	sync_files(&all_files_linked, sync_location, &mut ftp_stream);
 
+	/*
+	for a in all_files_linked
+	{
+		println!("{:?}", a);
+	}
+	*/
 /*
 	println!("\n\nAll linked files:");
 	for file in &all_files_linked
@@ -154,15 +192,25 @@ fn get_all_remote_files_recursive_from(directory: &String, ftp_stream: &mut FtpS
 					else if ftp_file.is_file()
 					{
 						let date_modified: DateTime<Utc> = ftp_file.modified().into();
+						let relative_path = fullpath.clone().replacen(directory, "", 1).to_string();
+						let relative_path = if relative_path.starts_with("/")
+						{
+							relative_path
+						}
+						else
+						{
+							format!("/{relative_path}")
+						};
+
 						tree.push
 						(
 							File
 							{
 								directory: current_directory.clone(),
 								fullpath: fullpath.clone(),
-								relative_path: fullpath.clone().replace(directory, ""),
+								relative_path: relative_path,
 								date_modified: date_modified,
-								handler: FileHandler::FtpFile(Some(ftp_file.clone())),
+								//handler: FileHandler::FtpFile(Some(ftp_file.clone())),
 							}
 						);
 					}
@@ -177,11 +225,7 @@ fn get_all_remote_files_recursive_from(directory: &String, ftp_stream: &mut FtpS
 		current_directory = match directories.get(i)
 		{
 			Some(value) => value.clone(),
-			None =>
-			{
-				//println!("Directories list is empty, no more directories to explore");
-				break;
-			}
+			None => break,
 		};	
 		i += 1;
 	}
@@ -320,6 +364,16 @@ fn get_all_local_files_recursive_from(directory: &String) -> Vec<File>
 											}
 										};
 
+										let relative_path = fullpath.clone().replacen(directory, "", 1).to_string();
+										let relative_path = if relative_path.starts_with("/")
+										{
+											relative_path
+										}
+										else
+										{
+											format!("/{relative_path}")
+										};
+
 										//Añadir al árbol de archivos que en realidad no es un árbol y es una lista nomás.
 										tree.push
 										(
@@ -327,9 +381,9 @@ fn get_all_local_files_recursive_from(directory: &String) -> Vec<File>
 											{
 												directory: current_directory.clone(),
 												fullpath: fullpath.clone(),
-												relative_path: fullpath.clone().replace(directory, ""),
+												relative_path: relative_path,
 												date_modified: date_modified,
-												handler: FileHandler::LocalFile,
+												//handler: FileHandler::LocalFile,
 											}
 										);
 									}
@@ -357,11 +411,7 @@ fn get_all_local_files_recursive_from(directory: &String) -> Vec<File>
 		current_directory = match directories.get(i)
 		{
 			Some(value) => value.clone(),
-			None =>
-			{
-				//println!("Directories list is empty, no more directories to explore");
-				break;
-			}
+			None => break,
 		};	
 		i += 1;
 	}
@@ -374,11 +424,7 @@ fn list_local_directory(directory: &String) -> Option<fs::ReadDir>
 	match fs::read_dir(directory)
 	{
 		Ok(value) => Some(value),
-		Err(error) =>
-		{
-			println!("[ERROR] Failed to read local directory, {error}");
-			None
-		}
+		Err(_) => None,
 	}
 }
 
@@ -555,89 +601,291 @@ fn set_sync_veredicts(all_linked_files: Vec<LinkedFile>) -> Vec<LinkedFile>
 //Del mismo modo, si file es local, entonces sync_location_path debería venir de SyncLocation::local_path.
 fn get_relative_directory(file: &File, sync_location_path: &String) -> String
 {
-	file.directory.replace(sync_location_path, "")
+	let relative_directory = file.directory.replacen(sync_location_path, "",1).to_string();
+	
+	if relative_directory.starts_with("/")
+	{
+		relative_directory
+	}
+	else
+	{
+		format!("/{relative_directory}")
+	}
 }
 
 fn sync_files(all_linked_files: &Vec<LinkedFile>, sync_location: &SyncLocation, ftp_stream: &mut FtpStream)
 {
+	do_nothing(all_linked_files);
 	upload_to_remote(all_linked_files, sync_location, ftp_stream);
-	download_to_local(all_linked_files, sync_location);
+	download_to_local(all_linked_files, sync_location, ftp_stream);
+
 }
 
 fn upload_to_remote(all_linked_files: &Vec<LinkedFile>, sync_location: &SyncLocation, ftp_stream: &mut FtpStream)
 {
+	let mut stdout = io::stdout();
+
 	for linked_file in all_linked_files
 	{
-		if linked_file.sync_veredict != SyncVeredict::UploadToRemote
+		if linked_file.sync_veredict == SyncVeredict::UploadToRemote
 		{
-			continue;
-		}
+			{ //Imprimir bonito
+				let _ = queue!(stdout, SetAttribute(Attribute::Bold));
+				let _ = queue!(stdout, SetForegroundColor(Color::Green));
+				let _ = queue!(stdout, Print("\n->"));
+				let _ = queue!(stdout, SetForegroundColor(Color::Reset));
+				let _ = queue!(stdout, Print(" Uploading: "));
+				let _ = queue!(stdout, SetAttribute(Attribute::Reset));
+				let _ = queue!(stdout, Print(format!("{}", linked_file.relative_path)));
+				let _ = stdout.flush();
+			}
 
-		println!(" -> Uploading: {}", linked_file.relative_path);
+			let remote_directory = format!("{}{}", sync_location.remote_path, linked_file.relative_directory);
+			let remote_fullpath = format!("{}{}", sync_location.remote_path, linked_file.relative_path);
+			//println!("{remote_directory}");
 
-		let remote_directory = format!("{}{}", sync_location.remote_path, linked_file.relative_directory);
-		let remote_fullpath = format!("{}{}", sync_location.remote_path, linked_file.relative_path);
-		//println!("{remote_directory}");
-
-		//Comprobar que el directorio existe
-		let directory_exists: bool = match ftp_stream.list(Some(remote_directory.as_str()))
-		{
-			Ok(_) => true,
-			Err(_) => false,
-		};
-
-		//Crear directorio si no existe
-		if !directory_exists
-		{
-			match ftp_stream.mkdir(remote_directory.clone())
+			//Comprobar que el directorio existe
+			let directory_exists: bool = match ftp_stream.list(Some(remote_directory.as_str()))
 			{
-				Ok(_) =>
+				Ok(_) => true,
+				Err(_) => false,
+			};
+
+			//Crear directorio si no existe
+			if !directory_exists
+			{
+				match ftp_stream.mkdir(remote_directory.clone())
 				{
-					println!("[INFO] Created directory {}", remote_directory.clone());
-				},
+					Ok(_) => (),
+					Err(error) =>
+					{
+						let _ = queue!(stdout, SetForegroundColor(Color::Red));
+						let _ = queue!(stdout, Print(" (failed!) \n[ERROR] "));
+						let _ = queue!(stdout, SetForegroundColor(Color::Reset));
+						let _ = queue!(stdout, Print(format!("Failed to create remote directory ({}), {}", remote_directory.clone(), error)));
+						let _ = stdout.flush();
+						continue;
+					}
+				}
+			}
+
+			//Cargar archivo local
+			let local_file = match &linked_file.local_file
+			{
+				Some(value) => value,
+				None =>
+				{
+					let _ = queue!(stdout, SetForegroundColor(Color::Red));
+					let _ = queue!(stdout, Print(" (failed!) \n[ERROR] "));
+					let _ = queue!(stdout, SetForegroundColor(Color::Reset));
+					let _ = queue!(stdout, Print(format!("Failed to access internal local file handler! ({})", &remote_directory)));
+					let _ = stdout.flush();
+					continue;
+				}
+			};
+
+			let mut local_file_handler = match fs::File::open(local_file.fullpath.clone())
+			{
+				Ok(value) => value,
 				Err(error) =>
 				{
-					println!("[ERROR] Failed to create remote directory ({}), {}", remote_directory.clone(), error);
+					let _ = queue!(stdout, SetForegroundColor(Color::Red));
+					let _ = queue!(stdout, Print(" (failed!) \n[ERROR] "));
+					let _ = queue!(stdout, SetForegroundColor(Color::Reset));
+					let _ = queue!(stdout, Print(format!("Failed to open local file!! ({}) {}", &remote_directory, error)));
+					let _ = stdout.flush();
+					continue;
+				}
+			};
+
+			//Subir archivo a remote
+			match ftp_stream.put_file(remote_fullpath, &mut local_file_handler)
+			{
+				Ok(_) => (),
+				Err(error) =>
+				{
+					let _ = queue!(stdout, SetForegroundColor(Color::Red));
+					let _ = queue!(stdout, Print(" (failed!) \n[ERROR] "));
+					let _ = queue!(stdout, SetForegroundColor(Color::Reset));
+					let _ = queue!(stdout, Print(format!("Failed to upload file to remote ({}), {}", &remote_directory, error)));
+					let _ = stdout.flush();
 					continue;
 				}
 			}
-		}
 
-		//Cargar archivo local
-		let local_file = match &linked_file.local_file
-		{
-			Some(value) => value,
-			None =>
-			{
-				println!("[ERROR] Failed to access internal local file handler!");
-				continue;
-			}
-		};
-
-		let mut local_file_handler = match fs::File::open(local_file.fullpath.clone())
-		{
-			Ok(value) => value,
-			Err(error) =>
-			{
-				println!("[ERROR] Failed to open local file!! {}", error);
-				continue;
-			}
-		};
-
-		//Subir archivo a remote
-		match ftp_stream.put_file(remote_fullpath, &mut local_file_handler)
-		{
-			Ok(_) => (),
-			Err(error) =>
-			{
-				println!("[ERROR] Failed to upload file to remote, {}", error);
-				continue;
+			{ //Imprimir bonito
+				let _ = queue!(stdout, SetForegroundColor(Color::Green));
+				let _ = queue!(stdout, Print(" (done!)"));
+				let _ = queue!(stdout, SetForegroundColor(Color::Reset));
+				let _ = stdout.flush();
 			}
 		}
 	}
 }
 
-fn download_to_local(all_linked_files: &Vec<LinkedFile>, sync_location: &SyncLocation)
+fn download_to_local(all_linked_files: &Vec<LinkedFile>, sync_location: &SyncLocation, ftp_stream: &mut FtpStream)
 {
+	let mut stdout = io::stdout();
 
+	for linked_file in all_linked_files
+	{
+		if linked_file.sync_veredict == SyncVeredict::DownloadToLocal
+		{
+			{ //Imprimir bonito
+				let _ = queue!(stdout, SetAttribute(Attribute::Bold));
+				let _ = queue!(stdout, SetForegroundColor(Color::Blue));
+				let _ = queue!(stdout, Print("\n<-"));
+				let _ = queue!(stdout, SetForegroundColor(Color::Reset));
+				let _ = queue!(stdout, Print(" Downloading: "));
+				let _ = queue!(stdout, SetAttribute(Attribute::Reset));
+				let _ = queue!(stdout, Print(format!("{}", linked_file.relative_path)));
+				let _ = stdout.flush();
+			}
+
+			let local_directory = format!("{}{}", sync_location.local_path, linked_file.relative_directory);
+			let local_fullpath = format!("{}{}", sync_location.local_path, linked_file.relative_path);
+			//println!("{remote_directory}");
+
+			//Comprobar que el directorio existe
+			let directory_exists: bool = match list_local_directory(&local_directory)
+			{
+				Some(_) => true,
+				None => false,
+			};
+
+			//Crear directorio si no existe
+			if !directory_exists
+			{
+				match fs::create_dir(local_directory.as_str())
+				{
+					Ok(_) => (),
+					Err(error) =>
+					{
+						let _ = queue!(stdout, SetForegroundColor(Color::Red));
+						let _ = queue!(stdout, Print(" (failed!) \n[ERROR] "));
+						let _ = queue!(stdout, SetForegroundColor(Color::Reset));
+						let _ = queue!(stdout, Print(format!("Failed to create directory ({}), {}", &local_directory, error)));
+						let _ = stdout.flush();
+						continue;
+					}
+				}
+			}
+
+			//Preparar archivo local
+			let mut local_file_handler = match fs::OpenOptions::new().read(true).write(true).create(true).open(local_fullpath)
+			{
+				Ok(value) => value,
+				Err(error) =>
+				{
+					let _ = queue!(stdout, SetForegroundColor(Color::Red));
+					let _ = queue!(stdout, Print(" (failed!) \n[ERROR] "));
+					let _ = queue!(stdout, SetForegroundColor(Color::Reset));
+					let _ = queue!(stdout, Print(format!("Failed to create local file or open existing local file as writable ({}), {}", &linked_file.relative_path, error)));
+					let _ = stdout.flush();
+					continue;
+				}
+			};
+
+			//Cargar archivo remote
+			let remote_file = match &linked_file.remote_file
+			{
+				Some(value) => value,
+				None =>
+				{
+					let _ = queue!(stdout, SetForegroundColor(Color::Red));
+					let _ = queue!(stdout, Print(" (failed!) \n[ERROR] "));
+					let _ = queue!(stdout, SetForegroundColor(Color::Reset));
+					let _ = queue!(stdout, Print(format!("Failed to access internal remote file handler! ({})", &linked_file.relative_path)));
+					let _ = stdout.flush();
+					continue;
+				}
+			};
+			
+			let mut remote_file_handler = match ftp_stream.retr_as_stream(&remote_file.fullpath)
+			{
+				Ok(value) => value,
+				Err(error) =>
+				{
+					let _ = queue!(stdout, SetForegroundColor(Color::Red));
+					let _ = queue!(stdout, Print(" (failed!) \n[ERROR] "));
+					let _ = queue!(stdout, SetForegroundColor(Color::Reset));
+					let _ = queue!(stdout, Print(format!("Unable to retrieve remote file ({}), {}", &linked_file.relative_path, error)));
+					let _ = stdout.flush();
+					continue;
+				}
+			};
+
+			//Descargar archivo local
+			match io::copy(&mut remote_file_handler, &mut local_file_handler)
+			{
+				Ok(_) =>
+				{
+					match ftp_stream.finalize_retr_stream(remote_file_handler)
+					{
+						Ok(_) => (),
+						Err(error) =>
+						{
+							let _ = queue!(stdout, SetForegroundColor(Color::Red));
+							let _ = queue!(stdout, Print(" (failed!) \n[ERROR] "));
+							let _ = queue!(stdout, SetForegroundColor(Color::Reset));
+							let _ = queue!(stdout, Print(format!("Failed to finalize remote stream ({}), {}", &linked_file.relative_path, error)));
+							let _ = stdout.flush();
+							continue;
+						}
+					}
+				},
+				Err(error) =>
+				{
+					let _ = queue!(stdout, SetForegroundColor(Color::Red));
+					let _ = queue!(stdout, Print(" (failed!) \n[ERROR] "));
+					let _ = queue!(stdout, SetForegroundColor(Color::Reset));
+					let _ = queue!(stdout, Print(format!("Failed to download file ({}), {}", &linked_file.relative_path, error)));
+					let _ = stdout.flush();
+					continue;
+				}
+			}
+
+			{ //Imprimir bonito
+				let _ = queue!(stdout, SetForegroundColor(Color::Green));
+				let _ = queue!(stdout, Print(" (done!)"));
+				let _ = queue!(stdout, SetForegroundColor(Color::Reset));
+				let _ = stdout.flush();
+			}
+		}
+	}
+}
+
+fn do_nothing(all_linked_files: &Vec<LinkedFile>)
+{
+	let mut stdout = io::stdout();
+
+	for linked_file in all_linked_files
+	{
+		if linked_file.sync_veredict == SyncVeredict::DoNothing
+		{
+			//Imprimir bonito
+			let _ = queue!(stdout, SetAttribute(Attribute::Bold));
+			let _ = queue!(stdout, SetForegroundColor(Color::Yellow));
+			let _ = queue!(stdout, Print("\n--"));
+			let _ = queue!(stdout, SetForegroundColor(Color::Reset));
+			let _ = queue!(stdout, Print("\n Ignoring: "));
+			let _ = queue!(stdout, SetAttribute(Attribute::Reset));
+			let _ = queue!(stdout, Print(format!("{}", linked_file.relative_path)));
+			let _ = queue!(stdout, SetForegroundColor(Color::Green));
+			let _ = queue!(stdout, Print(" (done!)"));
+			let _ = queue!(stdout, SetForegroundColor(Color::Reset));
+		}
+		else if linked_file.sync_veredict == SyncVeredict::NotDecidedYet
+		{
+			let _ = queue!(stdout, SetAttribute(Attribute::Bold));
+			let _ = queue!(stdout, SetForegroundColor(Color::Red));
+			let _ = queue!(stdout, Print("\n!!"));
+			let _ = queue!(stdout, SetForegroundColor(Color::Reset));
+			let _ = queue!(stdout, Print("\n FAILED TO DETERMINE WHAT TO DO WITH THIS, WILL BE IGNORED: "));
+			let _ = queue!(stdout, SetAttribute(Attribute::Reset));
+			let _ = queue!(stdout, Print(format!("{}", linked_file.relative_path)));
+		}
+	}
+	let _ = stdout.flush();
+	std::thread::sleep(Duration::from_millis(300));
 }
