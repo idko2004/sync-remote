@@ -35,6 +35,7 @@ use crossterm::
 	},
 	terminal::
 	{
+		is_raw_mode_enabled,
 		disable_raw_mode,
 		enable_raw_mode,
 		size,
@@ -45,6 +46,23 @@ use crossterm::
 	}
 };
 
+enum UiState
+{
+	MainMenu(usize), //usize saves the current remote selected
+	AddRemote(AddRemoteUiStep), //AddRemoteUiStep saves the current step of the process.
+	RemoteSelected(usize), //This returns the usize to main and exits the ui loop.
+}
+
+enum AddRemoteUiStep
+{
+	SettingName,
+	SettingRemoteUrl,
+	SettingRemotePath,
+	SettingLocalPath,
+	SettingRemoteUsername,
+	SettingRemotePassword,
+}
+
 enum UserInput
 {
 	Exit,
@@ -54,78 +72,50 @@ enum UserInput
 	Ignore,
 }
 
+pub struct RedrawOptions
+{
+	box_title: String,
+	selectable_options: Option<Vec<String>>,
+	draw_options_at_coordinates: (u16, u16), //row, column
+	selected_option: usize,
+}
+
 pub fn start_tui_blocking(selectable_options: &Vec<String>) -> Option<usize>
 {
 	let _ = execute!(stdout(), EnterAlternateScreen);
 	let _ = execute!(stdout(), Hide);
-	match enable_raw_mode()
-	{
-		Ok(_) => (),
-		Err(error) =>
-		{
-			println!("[ERROR] Failed to enable raw mode!! {error}");
-			return None;
-		}
-	}
 
-	let selectable_options = selectable_options.clone();
+	let mut ui_state = UiState::MainMenu(0);
+	let index_selected_option;
 
-	let mut index_selected_option = 0;
-
-	redraw(&selectable_options, index_selected_option);
-
+	//render_main_menu(&ui_state, selectable_options);
+	
 	loop
 	{
-		let input = match read()
+		match ui_state
 		{
-			Ok(value) => value,
-			Err(error) =>
+			UiState::MainMenu(_) =>
 			{
-				let _ = disable_raw_mode();
-				println!("[ERROR] Failed to read input!! {error}");
-				return None;
-			}
-		};
-
-		match process_input(&input)
-		{
-			UserInput::MoveDown =>
-			{
-				index_selected_option += 1;
-				if index_selected_option >= selectable_options.len()
-				{
-					index_selected_option = selectable_options.len() - 1;
-				}
+				render_main_menu(&ui_state, selectable_options);
+				ui_state = logic_main_menu(&mut ui_state, selectable_options);
 			},
-			UserInput::MoveUp =>
+			UiState::AddRemote(_) =>
 			{
-				if index_selected_option > 0
-				{
-					index_selected_option -= 1;
-				}
+				render_add_remote_menu(&ui_state);
+				ui_state = logic_add_remote_menu(&mut ui_state);
 			},
-			UserInput::Select =>
+			UiState::RemoteSelected(value) =>
 			{
+				index_selected_option = value;
 				break;
-			},
-			UserInput::Exit =>
-			{
-				let _ = execute!(stdout(), Clear(ClearType::All));
-				let _ = execute!(stdout(), Clear(ClearType::Purge));
-				let _ = execute!(stdout(), Show);
-				let _ = execute!(stdout(), LeaveAlternateScreen);
-				let _ = disable_raw_mode();
-				std::process::exit(0);
-			},
-			_ => (),
+			}
 		}
 
-		redraw(&selectable_options, index_selected_option);
 		std::thread::sleep(std::time::Duration::from_millis(50));
-		//let _ = execute!(stdout(), MoveTo(5, 5));
-		//let _ = execute!(stdout(), Print(format!("{:?}", input)));
 	}
 
+	let _ = execute!(stdout(), SetBackgroundColor(Color::Reset));
+	let _ = execute!(stdout(), SetForegroundColor(Color::Reset));
 	let _ = execute!(stdout(), Clear(ClearType::All));
 	let _ = execute!(stdout(), Clear(ClearType::Purge));
 	let _ = execute!(stdout(), Show);
@@ -135,10 +125,191 @@ pub fn start_tui_blocking(selectable_options: &Vec<String>) -> Option<usize>
 	Some(index_selected_option)
 }
 
-fn redraw(selectable_options: &Vec<String>, index_selected_option: usize)
+fn logic_main_menu(ui_state: &UiState, selectable_options: &Vec<String>) -> UiState
+{
+	match is_raw_mode_enabled()
+	{
+		Ok(raw_mode_enabled) =>
+		{
+			if !raw_mode_enabled
+			{
+				match enable_raw_mode()
+				{
+					Ok(_) => (),
+					Err(error) =>
+					{
+						panic_gracefully(format!("[ERROR] Failed to activate terminal raw mode!! {}", error).as_str());
+						std::process::exit(1);
+					}
+				}
+			}
+		},
+		Err(error) =>
+		{
+			panic_gracefully(format!("[ERROR] Failed to determine if terminal is in raw mode!! {}", error).as_str());
+			std::process::exit(1);
+		}
+	}
+
+	let mut index_selected_option = match ui_state
+	{
+		UiState::MainMenu(value) => value.clone(),
+		_ =>
+		{
+			panic_gracefully("[ERROR] logic_main_menu should not be called if current menu is not MainMenu!!");
+			std::process::exit(1);
+		}
+	};
+
+	let input = match read()
+	{
+		Ok(value) => value,
+		Err(error) =>
+		{
+			panic_gracefully(format!("[ERROR] Failed to read input!! {error}").as_str());
+			std::process::exit(1);
+		}
+	};
+
+	match process_input(&input)
+	{
+		UserInput::MoveDown =>
+		{
+			index_selected_option += 1;
+			if index_selected_option >= selectable_options.len()
+			{
+				index_selected_option = selectable_options.len() - 1;
+			}
+		},
+		UserInput::MoveUp =>
+		{
+			if index_selected_option > 0
+			{
+				index_selected_option -= 1;
+			}
+		},
+		UserInput::Select =>
+		{
+			if index_selected_option == selectable_options.len() - 1 //"(Add remote)" siempre es la última opción
+			{
+				return UiState::AddRemote(AddRemoteUiStep::SettingName);
+			}
+			else
+			{
+				return UiState::RemoteSelected(index_selected_option);
+			}
+		},
+		UserInput::Exit =>
+		{
+			kill_program();
+		},
+		_ => (),
+	}
+
+	UiState::MainMenu(index_selected_option)
+}
+
+fn render_main_menu(ui_state: &UiState, selectable_options: &Vec<String>)
+{
+	let selected_option = match ui_state
+	{
+		UiState::MainMenu(value) => value.clone(),
+		_ =>
+		{
+			panic_gracefully("[ERROR] render_main_menu should not be called if current menu is not MainMenu!!");
+			return;
+		}
+	};
+
+	let redraw_options = RedrawOptions
+	{
+		box_title: String::from(" Select a remote to sync "),
+		selectable_options: Some(selectable_options.clone()),
+		draw_options_at_coordinates: (0, 0),
+		selected_option: selected_option,
+	};
+
+	redraw(&redraw_options);
+}
+
+fn logic_add_remote_menu(ui_state: &UiState) -> UiState
+{
+	match is_raw_mode_enabled()
+	{
+		Ok(raw_mode_enabled) =>
+		{
+			if raw_mode_enabled
+			{
+				match disable_raw_mode()
+				{
+					Ok(_) => (),
+					Err(error) =>
+					{
+						panic_gracefully(format!("[ERROR] Failed to disable terminal raw mode!! {}", error).as_str());
+						std::process::exit(1);
+					}
+				}
+			}
+		},
+		Err(error) =>
+		{
+			panic_gracefully(format!("[ERROR] Failed to determine if terminal is in raw mode!! {}", error).as_str());
+			std::process::exit(1);
+		}
+	}
+
+	match ui_state
+	{
+		UiState::AddRemote(step) =>
+		{
+			match step
+			{
+				AddRemoteUiStep::SettingName =>
+				{
+					todo!("Hacer una función que lea input fuera de raw mode y que retorne un string acá");
+					UiState::AddRemote(AddRemoteUiStep::SettingName)
+				},
+				AddRemoteUiStep::SettingRemoteUrl =>
+				{
+					UiState::AddRemote(AddRemoteUiStep::SettingRemoteUrl)
+				},
+				AddRemoteUiStep::SettingRemotePath =>
+				{
+					UiState::AddRemote(AddRemoteUiStep::SettingRemotePath)
+				},
+				AddRemoteUiStep::SettingLocalPath =>
+				{
+					UiState::AddRemote(AddRemoteUiStep::SettingLocalPath)
+				},
+				AddRemoteUiStep::SettingRemoteUsername =>
+				{
+					UiState::AddRemote(AddRemoteUiStep::SettingRemoteUsername)
+				},
+				AddRemoteUiStep::SettingRemotePassword =>
+				{
+					UiState::AddRemote(AddRemoteUiStep::SettingRemotePassword)
+				}
+			}
+		},
+		_ =>
+		{
+			panic_gracefully("[ERROR] logic_add_remote_menu should not be called if current menu is not AddRemote!!");
+			std::process::exit(1);
+		}
+	}
+}
+
+fn render_add_remote_menu(ui_state: &UiState)
+{
+
+}
+
+fn redraw(redraw_options: &RedrawOptions)
 {
 	let mut stdout = stdout();
 
+	let _ = queue!(stdout, SetBackgroundColor(Color::DarkBlue));
+	let _ = queue!(stdout, SetForegroundColor(Color::White));
 	let _ = queue!(stdout, Clear(ClearType::All));
 	let _ = queue!(stdout, Clear(ClearType::Purge));
 	let _ = queue!(stdout, MoveTo(0, 1));
@@ -154,14 +325,14 @@ fn redraw(selectable_options: &Vec<String>, index_selected_option: usize)
 		}
 	};
 
-	stdout = draw_box(String::from(" Select a remote to sync "), width, height, stdout);
-	stdout = draw_options(selectable_options, index_selected_option, stdout);
+	stdout = draw_box(&redraw_options.box_title, width, height, stdout);
+	stdout = draw_options(redraw_options, stdout);
 	let _ = queue!(stdout, MoveTo(0, height));
 	let _ = stdout.flush();
 }
 
 
-fn draw_box(title: String, width: u16, height: u16, mut stdout: Stdout) -> Stdout
+fn draw_box(title: &String, width: u16, height: u16, mut stdout: Stdout) -> Stdout
 {
 	//Draw top horizontal line
 	let mut line =  String::with_capacity(width as usize);
@@ -233,32 +404,39 @@ fn draw_box(title: String, width: u16, height: u16, mut stdout: Stdout) -> Stdou
 	stdout
 }
 
-fn draw_options(selectable_options: &Vec<String>, index_selected_option: usize, mut stdout: Stdout) -> Stdout
+fn draw_options(redraw_options: &RedrawOptions, mut stdout: Stdout) -> Stdout
 {
-	let column: u16 = 3;
-	let mut row: u16 = 2;
-	let mut i = 0;
-
-	for item in selectable_options
+	match &redraw_options.selectable_options
 	{
-		let _ = queue!(stdout, MoveTo(column, row));
-		if index_selected_option != i
+		Some(selectable_options) =>
 		{
-			let _ = queue!(stdout, Print(format!(" -  {item}" )));
-		}
-		else
-		{
-			let _ = queue!(stdout, SetBackgroundColor(Color::DarkBlue));
-			let _ = queue!(stdout, SetForegroundColor(Color::White));
-			let _ = queue!(stdout, SetAttribute(Attribute::Bold));
-			let _ = queue!(stdout, Print(format!(" -> {item} ")));
-			let _ = queue!(stdout, SetAttribute(Attribute::Reset));
-			let _ = queue!(stdout, SetForegroundColor(Color::Reset));
-			let _ = queue!(stdout, SetBackgroundColor(Color::Reset));
-		}
-		
-		i += 1;
-		row += 1;
+			let mut row: u16 = 2 + redraw_options.draw_options_at_coordinates.0;
+			let column: u16 = 3 + redraw_options.draw_options_at_coordinates.1;
+			let mut i = 0;
+
+			for item in selectable_options
+			{
+				let _ = queue!(stdout, MoveTo(column, row));
+				if redraw_options.selected_option != i
+				{
+					let _ = queue!(stdout, Print(format!(" -  {item}" )));
+				}
+				else
+				{
+					let _ = queue!(stdout, SetBackgroundColor(Color::Yellow));
+					let _ = queue!(stdout, SetForegroundColor(Color::Black));
+					let _ = queue!(stdout, SetAttribute(Attribute::Bold));
+					let _ = queue!(stdout, Print(format!(" -> {item} ")));
+					let _ = queue!(stdout, SetAttribute(Attribute::Reset));
+					let _ = queue!(stdout, SetForegroundColor(Color::White));
+					let _ = queue!(stdout, SetBackgroundColor(Color::DarkBlue));
+				}
+				
+				i += 1;
+				row += 1;
+			}
+		},
+		None => (),
 	}
 
 	stdout
@@ -304,4 +482,28 @@ fn process_input(event: &Event) -> UserInput
 	}
 
 	UserInput::Ignore
+}
+
+fn kill_program()
+{
+	let _ = execute!(stdout(), SetBackgroundColor(Color::Reset));
+	let _ = execute!(stdout(), SetForegroundColor(Color::Reset));
+	let _ = execute!(stdout(), Clear(ClearType::All));
+	let _ = execute!(stdout(), Clear(ClearType::Purge));
+	let _ = execute!(stdout(), Show);
+	let _ = execute!(stdout(), LeaveAlternateScreen);
+	let _ = disable_raw_mode();
+	std::process::exit(0);
+}
+
+fn panic_gracefully(message: &str)
+{
+	let _ = execute!(stdout(), SetBackgroundColor(Color::Reset));
+	let _ = execute!(stdout(), SetForegroundColor(Color::Reset));
+	let _ = execute!(stdout(), Clear(ClearType::All));
+	let _ = execute!(stdout(), Clear(ClearType::Purge));
+	let _ = execute!(stdout(), Show);
+	let _ = execute!(stdout(), LeaveAlternateScreen);
+	let _ = disable_raw_mode();
+	panic!("{}", message);
 }
