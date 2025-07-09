@@ -73,15 +73,43 @@ enum UserInput
 	Select,
 	MoveDown,
 	MoveUp,
+	Char(char),
+	Backspace,
 	Ignore,
 }
 
-pub struct RedrawOptions
+struct RedrawOptions
 {
 	box_title: String,
 	selectable_options: Option<Vec<String>>,
 	draw_options_at_coordinates: (u16, u16), //row, column
 	selected_option: usize,
+}
+
+struct NewRemoteDetails
+{
+	name: Option<String>,
+	remote_url: Option<String>,
+	remote_path: Option<String>,
+	local_path: Option<String>,
+	remote_username: Option<String>,
+	remote_password: Option<String>,
+}
+
+impl NewRemoteDetails
+{
+	fn new() -> Self
+	{
+		Self
+		{
+			name: None,
+			remote_url: None,
+			remote_path: None,
+			local_path: None,
+			remote_username: None,
+			remote_password: None,
+		}
+	}
 }
 
 pub fn start_tui_blocking(selectable_options: &Vec<String>) -> Option<usize>
@@ -90,6 +118,7 @@ pub fn start_tui_blocking(selectable_options: &Vec<String>) -> Option<usize>
 	let _ = execute!(stdout(), Hide);
 
 	let mut ui_state = UiState::MainMenu(0);
+	let mut new_remote_details = NewRemoteDetails::new(); //This is only to keep track of UiState::AddRemote state.
 	let index_selected_option;
 
 	//render_main_menu(&ui_state, selectable_options);
@@ -106,7 +135,7 @@ pub fn start_tui_blocking(selectable_options: &Vec<String>) -> Option<usize>
 			UiState::AddRemote(_) =>
 			{
 				//render_add_remote_menu(&ui_state); //this should be called by logic_add_remote only once per screen
-				ui_state = logic_add_remote_menu(&mut ui_state);
+				ui_state = logic_add_remote_menu(&mut ui_state, &mut new_remote_details);
 			},
 			UiState::RemoteSelected(value) =>
 			{
@@ -165,17 +194,7 @@ fn logic_main_menu(ui_state: &UiState, selectable_options: &Vec<String>) -> UiSt
 		}
 	};
 
-	let input = match read()
-	{
-		Ok(value) => value,
-		Err(error) =>
-		{
-			panic_gracefully(format!("[ERROR] Failed to read input!! {error}").as_str());
-			std::process::exit(1);
-		}
-	};
-
-	match process_input_raw_mode(&input)
+	match read_input_raw_mode(false)
 	{
 		UserInput::MoveDown =>
 		{
@@ -236,8 +255,9 @@ fn render_main_menu(ui_state: &UiState, selectable_options: &Vec<String>)
 	redraw(&redraw_options);
 }
 
-fn logic_add_remote_menu(ui_state: &UiState) -> UiState
+fn logic_add_remote_menu(ui_state: &UiState, new_remote_details: &mut NewRemoteDetails) -> UiState
 {
+	/*
 	match is_raw_mode_enabled()
 	{
 		Ok(raw_mode_enabled) =>
@@ -265,6 +285,10 @@ fn logic_add_remote_menu(ui_state: &UiState) -> UiState
 			std::process::exit(1);
 		}
 	}
+	*/
+
+	let _ = execute!(stdout(), EnableBlinking);
+	let _ = execute!(stdout(), Show);
 
 	match ui_state
 	{
@@ -274,9 +298,40 @@ fn logic_add_remote_menu(ui_state: &UiState) -> UiState
 			{
 				AddRemoteUiStep::SettingName =>
 				{
-					render_add_remote_menu(ui_state);
-					let input = read_input_as_string();
-					UiState::AddRemote(AddRemoteUiStep::SettingName)
+					let mut full_string = String::new();
+
+					loop
+					{
+						render_add_remote_menu(ui_state, &full_string);
+						match read_input_raw_mode(true)
+						{
+							UserInput::Char(input_char) =>
+							{
+								full_string.push(input_char);
+							},
+							UserInput::Backspace =>
+							{
+								full_string.pop();
+							},
+							UserInput::Select =>
+							{
+								full_string = full_string.trim().to_string();
+								if !full_string.is_empty()
+								{
+									break;
+								}
+							},
+							UserInput::Exit =>
+							{
+								kill_program();
+							},
+							_ => (),
+						}
+						std::thread::sleep(std::time::Duration::from_millis(50));
+					}
+
+					new_remote_details.name = Some(full_string.clone());
+					UiState::AddRemote(AddRemoteUiStep::SettingRemoteUrl)
 				},
 				AddRemoteUiStep::SettingRemoteUrl =>
 				{
@@ -308,7 +363,7 @@ fn logic_add_remote_menu(ui_state: &UiState) -> UiState
 	}
 }
 
-fn render_add_remote_menu(ui_state: &UiState)
+fn render_add_remote_menu(ui_state: &UiState, current_string: &str)
 {
 	let mut stdout = stdout();
 	match ui_state
@@ -331,12 +386,16 @@ fn render_add_remote_menu(ui_state: &UiState)
 					);
 					let _ = queue!(stdout, MoveTo(3, 2));
 					let _ = queue!(stdout, SetAttribute(Attribute::Bold));
-					let _ = queue!(stdout, Print("Name"));
+					let _ = queue!(stdout, Print("Name:"));
 					let _ = queue!(stdout, SetAttribute(Attribute::NoBold));
-					let _ = queue!(stdout, MoveTo(3, 4));
+					let _ = queue!(stdout, MoveTo(3, 3));
 					let _ = queue!(stdout, Print("What name or alias would you like to give to the remote?"));
-					let _ = queue!(stdout, MoveTo(3, 6));
-					let _ = queue!(stdout, Print("> "));
+					let _ = queue!(stdout, MoveTo(3, 5));
+					let _ = queue!(stdout, SetAttribute(Attribute::Underlined));
+					let prompt = format!("> {}", current_string);
+					let _ = queue!(stdout, Print(&prompt));
+					let _ = queue!(stdout, SetAttribute(Attribute::NoUnderline));
+					let _ = queue!(stdout, MoveTo(3 + prompt.len() as u16, 5));
 					let _ = stdout.flush();
 				},
 				_ =>
@@ -492,7 +551,7 @@ fn draw_options(redraw_options: &RedrawOptions, mut stdout: Stdout) -> Stdout
 	stdout
 }
 
-fn process_input_raw_mode(event: &Event) -> UserInput
+fn process_input_raw_mode(event: &Event, return_chars: bool) -> UserInput
 {
 	let key_event = match event.as_key_event()
 	{
@@ -526,31 +585,41 @@ fn process_input_raw_mode(event: &Event) -> UserInput
 		return UserInput::Select;
 	}
 
+	if key_event.code == KeyCode::Backspace
+	{
+		return UserInput::Backspace;
+	}
+
 	if key_event.code == KeyCode::Esc
 	{
 		return UserInput::Exit;
 	}
 
-	UserInput::Ignore
-}
-
-fn read_input_as_string() -> String
-{
-	let mut result = String::new();
-	match stdin().read_line(&mut result)
+	if return_chars
 	{
-		Ok(_) => (),
-		Err(error) =>
+		match key_event.code.as_char()
 		{
-			panic_gracefully(format!("[ERROR] Failed to read input, {}", error).as_str());
-			std::process::exit(1);
+			Some(value) => return UserInput::Char(value),
+			None => (),
 		}
 	}
 
-	result = result.replace("\n", "");
-	result = result.replace("\r", "");
+	UserInput::Ignore
+}
 
-	result
+fn read_input_raw_mode(return_chars: bool) -> UserInput
+{
+	let input = match read()
+	{
+		Ok(value) => value,
+		Err(error) =>
+		{
+			panic_gracefully(format!("[ERROR] Failed to read input!! {error}").as_str());
+			std::process::exit(1);
+		}
+	};
+
+	process_input_raw_mode(&input, return_chars)
 }
 
 fn kill_program()
