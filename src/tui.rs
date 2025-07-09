@@ -50,6 +50,7 @@ use crossterm::
 	}
 };
 
+#[derive(Clone, Copy)]
 enum UiState
 {
 	MainMenu(usize), //usize saves the current remote selected
@@ -57,6 +58,7 @@ enum UiState
 	RemoteSelected(usize), //This returns the usize to main and exits the ui loop.
 }
 
+#[derive(Clone, Copy)]
 enum AddRemoteUiStep
 {
 	SettingName,
@@ -257,36 +259,6 @@ fn render_main_menu(ui_state: &UiState, selectable_options: &Vec<String>)
 
 fn logic_add_remote_menu(ui_state: &UiState, new_remote_details: &mut NewRemoteDetails) -> UiState
 {
-	/*
-	match is_raw_mode_enabled()
-	{
-		Ok(raw_mode_enabled) =>
-		{
-			if raw_mode_enabled
-			{
-				match disable_raw_mode()
-				{
-					Ok(_) => 
-					{
-						let _ = execute!(stdout(), Show);
-						let _ = execute!(stdout(), EnableBlinking);
-					},
-					Err(error) =>
-					{
-						panic_gracefully(format!("[ERROR] Failed to disable terminal raw mode!! {}", error).as_str());
-						std::process::exit(1);
-					}
-				}
-			}
-		},
-		Err(error) =>
-		{
-			panic_gracefully(format!("[ERROR] Failed to determine if terminal is in raw mode!! {}", error).as_str());
-			std::process::exit(1);
-		}
-	}
-	*/
-
 	let _ = execute!(stdout(), EnableBlinking);
 	let _ = execute!(stdout(), Show);
 
@@ -296,7 +268,9 @@ fn logic_add_remote_menu(ui_state: &UiState, new_remote_details: &mut NewRemoteD
 		{
 			match step
 			{
-				AddRemoteUiStep::SettingName =>
+				//Agrupar pantallas con comportamiento similiar
+				AddRemoteUiStep::SettingName |
+				AddRemoteUiStep::SettingRemoteUrl =>
 				{
 					let mut full_string = String::new();
 
@@ -330,12 +304,21 @@ fn logic_add_remote_menu(ui_state: &UiState, new_remote_details: &mut NewRemoteD
 						std::thread::sleep(std::time::Duration::from_millis(50));
 					}
 
-					new_remote_details.name = Some(full_string.clone());
-					UiState::AddRemote(AddRemoteUiStep::SettingRemoteUrl)
-				},
-				AddRemoteUiStep::SettingRemoteUrl =>
-				{
-					UiState::AddRemote(AddRemoteUiStep::SettingRemoteUrl)
+					//Comportamiento que varía en pantallas parecidas.
+					match step
+					{
+						AddRemoteUiStep::SettingName =>
+						{
+							new_remote_details.name = Some(full_string.clone());
+							UiState::AddRemote(AddRemoteUiStep::SettingRemoteUrl)
+						},
+						AddRemoteUiStep::SettingRemoteUrl =>
+						{
+							new_remote_details.remote_url = Some(full_string.clone());
+							UiState::AddRemote(AddRemoteUiStep::SettingRemotePath)
+						},
+						_ => ui_state.clone()
+					}
 				},
 				AddRemoteUiStep::SettingRemotePath =>
 				{
@@ -387,15 +370,67 @@ fn render_add_remote_menu(ui_state: &UiState, current_string: &str)
 					let _ = queue!(stdout, MoveTo(3, 2));
 					let _ = queue!(stdout, SetAttribute(Attribute::Bold));
 					let _ = queue!(stdout, Print("Name:"));
-					let _ = queue!(stdout, SetAttribute(Attribute::NoBold));
+					let _ = queue!(stdout, SetAttribute(Attribute::Reset));
+					let _ = queue!(stdout, SetBackgroundColor(Color::DarkBlue));
+					let _ = queue!(stdout, SetForegroundColor(Color::White));
 					let _ = queue!(stdout, MoveTo(3, 3));
 					let _ = queue!(stdout, Print("What name or alias would you like to give to the remote?"));
 					let _ = queue!(stdout, MoveTo(3, 5));
 					let _ = queue!(stdout, SetAttribute(Attribute::Underlined));
+					let _ = queue!(stdout, SetBackgroundColor(Color::Yellow));
+					let _ = queue!(stdout, SetForegroundColor(Color::Black));
 					let prompt = format!("> {}", current_string);
 					let _ = queue!(stdout, Print(&prompt));
-					let _ = queue!(stdout, SetAttribute(Attribute::NoUnderline));
+					let _ = queue!(stdout, SetAttribute(Attribute::Reset));
+					let _ = queue!(stdout, SetBackgroundColor(Color::DarkBlue));
+					let _ = queue!(stdout, SetForegroundColor(Color::White));
 					let _ = queue!(stdout, MoveTo(3 + prompt.len() as u16, 5));
+					let _ = stdout.flush();
+				},
+				AddRemoteUiStep::SettingRemoteUrl =>
+				{
+					redraw
+					(
+						&RedrawOptions
+						{
+							box_title: String::from(" Add a remote "),
+							selectable_options: None,
+							draw_options_at_coordinates: (0, 0),
+							selected_option: 0,
+						}
+					);
+					let _ = queue!(stdout, MoveTo(3, 2));
+					let _ = queue!(stdout, SetAttribute(Attribute::Bold));
+					let _ = queue!(stdout, Print("Remote Host:"));
+					let _ = queue!(stdout, SetAttribute(Attribute::Reset));
+					let _ = queue!(stdout, SetBackgroundColor(Color::DarkBlue));
+					let _ = queue!(stdout, SetForegroundColor(Color::White));
+					let _ = queue!(stdout, MoveTo(3, 3));
+					let _ = queue!(stdout, Print("Enter the host of your FTP remote."));
+					let _ = queue!(stdout, MoveTo(3, 4));
+					let _ = queue!(stdout, Print("(For example: "));
+					let _ = queue!(stdout, SetAttribute(Attribute::Italic));
+					let _ = queue!(stdout, Print("ftp.myserver.com"));
+					let _ = queue!(stdout, SetAttribute(Attribute::Reset));
+					let _ = queue!(stdout, SetBackgroundColor(Color::DarkBlue));
+					let _ = queue!(stdout, SetForegroundColor(Color::White));
+					let _ = queue!(stdout, Print(" or "));
+					let _ = queue!(stdout, SetAttribute(Attribute::Italic));
+					let _ = queue!(stdout, Print("192.168.0.200:8021"));
+					let _ = queue!(stdout, SetAttribute(Attribute::Reset));
+					let _ = queue!(stdout, SetBackgroundColor(Color::DarkBlue));
+					let _ = queue!(stdout, SetForegroundColor(Color::White));
+					let _ = queue!(stdout, Print(")"));
+					let _ = queue!(stdout, MoveTo(3, 6));
+					let _ = queue!(stdout, SetAttribute(Attribute::Underlined));
+					let _ = queue!(stdout, SetBackgroundColor(Color::Yellow));
+					let _ = queue!(stdout, SetForegroundColor(Color::Black));
+					let prompt = format!("> {} ", current_string);
+					let _ = queue!(stdout, Print(&prompt));
+					let _ = queue!(stdout, SetAttribute(Attribute::Reset));
+					let _ = queue!(stdout, SetBackgroundColor(Color::DarkBlue));
+					let _ = queue!(stdout, SetForegroundColor(Color::White));
+					let _ = queue!(stdout, MoveTo(3 + (prompt.len() as u16) - 1, 6));
 					let _ = stdout.flush();
 				},
 				_ =>
@@ -562,37 +597,23 @@ fn process_input_raw_mode(event: &Event, return_chars: bool) -> UserInput
 		}
 	};
 
+	match key_event.code
+	{
+		KeyCode::Down => return UserInput::MoveDown,
+		KeyCode::Up => return UserInput::MoveUp,
+		KeyCode::Enter => return UserInput::Select,
+		KeyCode::Backspace => return UserInput::Backspace,
+		KeyCode::Esc => return UserInput::Exit,
+		_ => (),
+	}
+
 	if key_event.modifiers == KeyModifiers::CONTROL
 	{
 		if key_event.code == KeyCode::Char('c')
+		|| key_event.code == KeyCode::Char('q')
 		{
 			return UserInput::Exit;
 		}
-	}
-
-	if key_event.code == KeyCode::Down
-	{
-		return UserInput::MoveDown;
-	}
-
-	if key_event.code == KeyCode::Up
-	{
-		return UserInput::MoveUp;
-	}
-
-	if key_event.code == KeyCode::Enter
-	{
-		return UserInput::Select;
-	}
-
-	if key_event.code == KeyCode::Backspace
-	{
-		return UserInput::Backspace;
-	}
-
-	if key_event.code == KeyCode::Esc
-	{
-		return UserInput::Exit;
 	}
 
 	if return_chars
@@ -631,6 +652,7 @@ fn kill_program()
 	let _ = execute!(stdout(), Show);
 	let _ = execute!(stdout(), LeaveAlternateScreen);
 	let _ = disable_raw_mode();
+	let _ = execute!(stdout(), Print("\nGoodbye!\n"));
 	std::process::exit(0);
 }
 
