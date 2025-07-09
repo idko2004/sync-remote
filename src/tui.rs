@@ -4,7 +4,9 @@ use std::
 	{
 		stdout,
 		Stdout,
-		Write
+		Write,
+		stdin,
+		Stdin,
 	}
 };
 use crossterm::
@@ -14,6 +16,8 @@ use crossterm::
 		MoveTo,
 		Hide,
 		Show,
+		EnableBlinking,
+		DisableBlinking,
 	},
 	event::
 	{
@@ -101,7 +105,7 @@ pub fn start_tui_blocking(selectable_options: &Vec<String>) -> Option<usize>
 			},
 			UiState::AddRemote(_) =>
 			{
-				render_add_remote_menu(&ui_state);
+				//render_add_remote_menu(&ui_state); //this should be called by logic_add_remote only once per screen
 				ui_state = logic_add_remote_menu(&mut ui_state);
 			},
 			UiState::RemoteSelected(value) =>
@@ -171,7 +175,7 @@ fn logic_main_menu(ui_state: &UiState, selectable_options: &Vec<String>) -> UiSt
 		}
 	};
 
-	match process_input(&input)
+	match process_input_raw_mode(&input)
 	{
 		UserInput::MoveDown =>
 		{
@@ -242,7 +246,11 @@ fn logic_add_remote_menu(ui_state: &UiState) -> UiState
 			{
 				match disable_raw_mode()
 				{
-					Ok(_) => (),
+					Ok(_) => 
+					{
+						let _ = execute!(stdout(), Show);
+						let _ = execute!(stdout(), EnableBlinking);
+					},
 					Err(error) =>
 					{
 						panic_gracefully(format!("[ERROR] Failed to disable terminal raw mode!! {}", error).as_str());
@@ -266,7 +274,8 @@ fn logic_add_remote_menu(ui_state: &UiState) -> UiState
 			{
 				AddRemoteUiStep::SettingName =>
 				{
-					todo!("Hacer una función que lea input fuera de raw mode y que retorne un string acá");
+					render_add_remote_menu(ui_state);
+					let input = read_input_as_string();
 					UiState::AddRemote(AddRemoteUiStep::SettingName)
 				},
 				AddRemoteUiStep::SettingRemoteUrl =>
@@ -301,7 +310,48 @@ fn logic_add_remote_menu(ui_state: &UiState) -> UiState
 
 fn render_add_remote_menu(ui_state: &UiState)
 {
-
+	let mut stdout = stdout();
+	match ui_state
+	{
+		UiState::AddRemote(step) =>
+		{
+			match step
+			{
+				AddRemoteUiStep::SettingName =>
+				{
+					redraw
+					(
+						&RedrawOptions
+						{
+							box_title: String::from(" Add a remote "),
+							selectable_options: None,
+							draw_options_at_coordinates: (0, 0),
+							selected_option: 0,
+						}
+					);
+					let _ = queue!(stdout, MoveTo(3, 2));
+					let _ = queue!(stdout, SetAttribute(Attribute::Bold));
+					let _ = queue!(stdout, Print("Name"));
+					let _ = queue!(stdout, SetAttribute(Attribute::NoBold));
+					let _ = queue!(stdout, MoveTo(3, 4));
+					let _ = queue!(stdout, Print("What name or alias would you like to give to the remote?"));
+					let _ = queue!(stdout, MoveTo(3, 6));
+					let _ = queue!(stdout, Print("> "));
+					let _ = stdout.flush();
+				},
+				_ =>
+				{
+					panic_gracefully("[ERROR] idk how to render this");
+					std::process::exit(1);
+				}
+			}
+		},
+		_ =>
+		{
+			panic_gracefully("[ERROR] render_add_remote_menu should not be called if current menu is not AddRemote!!");
+			std::process::exit(1);
+		}
+	}
 }
 
 fn redraw(redraw_options: &RedrawOptions)
@@ -442,7 +492,7 @@ fn draw_options(redraw_options: &RedrawOptions, mut stdout: Stdout) -> Stdout
 	stdout
 }
 
-fn process_input(event: &Event) -> UserInput
+fn process_input_raw_mode(event: &Event) -> UserInput
 {
 	let key_event = match event.as_key_event()
 	{
@@ -482,6 +532,25 @@ fn process_input(event: &Event) -> UserInput
 	}
 
 	UserInput::Ignore
+}
+
+fn read_input_as_string() -> String
+{
+	let mut result = String::new();
+	match stdin().read_line(&mut result)
+	{
+		Ok(_) => (),
+		Err(error) =>
+		{
+			panic_gracefully(format!("[ERROR] Failed to read input, {}", error).as_str());
+			std::process::exit(1);
+		}
+	}
+
+	result = result.replace("\n", "");
+	result = result.replace("\r", "");
+
+	result
 }
 
 fn kill_program()
