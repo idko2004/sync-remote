@@ -1,0 +1,204 @@
+<mxfile host="Electron" agent="Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) draw.io/26.1.1 Chrome/132.0.6834.210 Electron/34.3.3 Safari/537.36" version="26.1.1">
+  <diagram name="Page-1" id="4E6JK-wFgK6ZcHvompLx">
+    <mxGraphModel dx="829" dy="534" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="850" pageHeight="1100" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="Re0q_Iw5m2-wxeKRrN7d-1" value="How the TUI should flow" style="text;html=1;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;fontSize=30;" vertex="1" parent="1">
+          <mxGeometry x="235" y="20" width="380" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="Re0q_Iw5m2-wxeKRrN7d-8" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="Re0q_Iw5m2-wxeKRrN7d-2" target="Re0q_Iw5m2-wxeKRrN7d-7">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="Re0q_Iw5m2-wxeKRrN7d-2" value="&lt;div style=&quot;color: #abb2bf;background-color: #282c34;font-family: &#39;UbuntuMono Nerd Font&#39;, &#39;Droid Sans Mono&#39;, &#39;monospace&#39;, monospace, &#39;Droid Sans Mono&#39;, &#39;monospace&#39;, monospace;font-weight: normal;font-size: 14px;line-height: 19px;white-space: pre;&quot;&gt;&lt;div&gt;&lt;span style=&quot;color: #ff6480;&quot;&gt;TuiState&lt;/span&gt;&lt;span style=&quot;color: #7a82da;&quot;&gt;::&lt;/span&gt;&lt;span style=&quot;color: #9f7efe;&quot;&gt;MainMenu&lt;/span&gt;&lt;/div&gt;&lt;/div&gt;" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#282C34;strokeColor=#314354;fontColor=#ffffff;" vertex="1" parent="1">
+          <mxGeometry x="50" y="160" width="170" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="Re0q_Iw5m2-wxeKRrN7d-3" value="" style="ellipse;html=1;shape=startState;fillColor=#f0a30a;fontColor=#000000;strokeColor=#BD7000;" vertex="1" parent="1">
+          <mxGeometry x="120" y="70" width="30" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="Re0q_Iw5m2-wxeKRrN7d-4" value="" style="edgeStyle=orthogonalEdgeStyle;html=1;verticalAlign=bottom;endArrow=classic;endSize=8;rounded=0;fillColor=#f0a30a;strokeColor=#FFFBF5;endFill=1;" edge="1" source="Re0q_Iw5m2-wxeKRrN7d-3" parent="1">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="135" y="160" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="Re0q_Iw5m2-wxeKRrN7d-10" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="Re0q_Iw5m2-wxeKRrN7d-7" target="Re0q_Iw5m2-wxeKRrN7d-9">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="Re0q_Iw5m2-wxeKRrN7d-18" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="1" source="Re0q_Iw5m2-wxeKRrN7d-7" target="Re0q_Iw5m2-wxeKRrN7d-17">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="Re0q_Iw5m2-wxeKRrN7d-7" value="Select a remote to sync or add a remote." style="rounded=0;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="60" y="240" width="150" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="Re0q_Iw5m2-wxeKRrN7d-12" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="Re0q_Iw5m2-wxeKRrN7d-9" target="Re0q_Iw5m2-wxeKRrN7d-11">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="Re0q_Iw5m2-wxeKRrN7d-9" value="If a remote is selected" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#76608a;fontColor=#ffffff;strokeColor=#432D57;" vertex="1" parent="1">
+          <mxGeometry x="52.5" y="350" width="165" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="Re0q_Iw5m2-wxeKRrN7d-14" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="Re0q_Iw5m2-wxeKRrN7d-11" target="Re0q_Iw5m2-wxeKRrN7d-13">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="Re0q_Iw5m2-wxeKRrN7d-11" value="&lt;pre&gt;&lt;div style=&quot;color: rgb(171, 178, 191); background-color: rgb(40, 44, 52); font-family: &amp;quot;UbuntuMono Nerd Font&amp;quot;, &amp;quot;Droid Sans Mono&amp;quot;, &amp;quot;monospace&amp;quot;, monospace, &amp;quot;Droid Sans Mono&amp;quot;, &amp;quot;monospace&amp;quot;, monospace; font-size: 14px; line-height: 19px;&quot;&gt;&lt;span style=&quot;color: #ff6480;&quot;&gt;TuiState&lt;/span&gt;&lt;span style=&quot;color: #7a82da;&quot;&gt;::&lt;/span&gt;&lt;span style=&quot;color: #9f7efe;&quot;&gt;RemoteSelected&lt;/span&gt;(usize)&lt;/div&gt;&lt;/pre&gt;" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#282C34;strokeColor=#314354;fontColor=#ffffff;" vertex="1" parent="1">
+          <mxGeometry x="10" y="420" width="250" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="Re0q_Iw5m2-wxeKRrN7d-16" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="Re0q_Iw5m2-wxeKRrN7d-13" target="Re0q_Iw5m2-wxeKRrN7d-15">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="Re0q_Iw5m2-wxeKRrN7d-13" value="Stores the index of the selected remote.&lt;div&gt;&lt;br&gt;&lt;/div&gt;&lt;div&gt;Then the index is used to return TuiResult::RemoteSelected(usize) to main.rs, indicating which remote to sync.&lt;/div&gt;" style="rounded=0;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="22.5" y="480" width="225" height="90" as="geometry" />
+        </mxCell>
+        <mxCell id="Re0q_Iw5m2-wxeKRrN7d-15" value="" style="ellipse;html=1;shape=endState;fillColor=#f0a30a;strokeColor=#BD7000;fontColor=#000000;" vertex="1" parent="1">
+          <mxGeometry x="120" y="610" width="30" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="Re0q_Iw5m2-wxeKRrN7d-20" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="Re0q_Iw5m2-wxeKRrN7d-17" target="Re0q_Iw5m2-wxeKRrN7d-19">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="Re0q_Iw5m2-wxeKRrN7d-17" value="If &quot;Add a remote&quot; is selected" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#76608a;fontColor=#ffffff;strokeColor=#432D57;" vertex="1" parent="1">
+          <mxGeometry x="451.25" y="255" width="165" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="Re0q_Iw5m2-wxeKRrN7d-24" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="Re0q_Iw5m2-wxeKRrN7d-19" target="Re0q_Iw5m2-wxeKRrN7d-23">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="Re0q_Iw5m2-wxeKRrN7d-19" value="&lt;pre&gt;&lt;div style=&quot;color: rgb(171, 178, 191); background-color: rgb(40, 44, 52); font-family: &amp;quot;UbuntuMono Nerd Font&amp;quot;, &amp;quot;Droid Sans Mono&amp;quot;, &amp;quot;monospace&amp;quot;, monospace, &amp;quot;Droid Sans Mono&amp;quot;, &amp;quot;monospace&amp;quot;, monospace; font-size: 14px; line-height: 19px;&quot;&gt;&lt;span style=&quot;color: #ff6480;&quot;&gt;TuiState&lt;/span&gt;&lt;span style=&quot;color: #7a82da;&quot;&gt;::&lt;/span&gt;&lt;span style=&quot;color: #9f7efe;&quot;&gt;AddRemote&lt;/span&gt;(&lt;span style=&quot;color: #ff6480;&quot;&gt;AddRemoteTuiStep&lt;/span&gt;&lt;span style=&quot;color: #7a82da;&quot;&gt;::&lt;/span&gt;&lt;span style=&quot;color: #9f7efe;&quot;&gt;SettingName&lt;/span&gt;)&lt;/div&gt;&lt;/pre&gt;" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#282C34;strokeColor=#314354;fontColor=#ffffff;" vertex="1" parent="1">
+          <mxGeometry x="347.5" y="340" width="372.5" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="Re0q_Iw5m2-wxeKRrN7d-21" value="Sets TuiState to AddRemote, which indicates to change to the &quot;Add Remote&quot; UI, and also stores the current step of the process using AddRemoteTuiStep.&lt;div&gt;&lt;br&gt;&lt;/div&gt;&lt;div&gt;AddRemoteTuiStep::RemoteName is the first step of the process.&lt;/div&gt;&lt;div&gt;&lt;br&gt;&lt;/div&gt;&lt;div&gt;All of the inputs the user makes through the various steps is stores in a NewRemoteDetails struct.&lt;/div&gt;" style="rounded=0;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="730" y="290" width="228.75" height="180" as="geometry" />
+        </mxCell>
+        <mxCell id="Re0q_Iw5m2-wxeKRrN7d-26" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="Re0q_Iw5m2-wxeKRrN7d-23" target="Re0q_Iw5m2-wxeKRrN7d-25">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="Re0q_Iw5m2-wxeKRrN7d-23" value="The user inputs the name or alias of the remote" style="html=1;whiteSpace=wrap;" vertex="1" parent="1">
+          <mxGeometry x="453.13" y="405" width="161.25" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="Re0q_Iw5m2-wxeKRrN7d-28" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="Re0q_Iw5m2-wxeKRrN7d-25" target="Re0q_Iw5m2-wxeKRrN7d-27">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="Re0q_Iw5m2-wxeKRrN7d-25" value="&lt;pre&gt;&lt;div style=&quot;color: rgb(171, 178, 191); background-color: rgb(40, 44, 52); font-family: &amp;quot;UbuntuMono Nerd Font&amp;quot;, &amp;quot;Droid Sans Mono&amp;quot;, &amp;quot;monospace&amp;quot;, monospace, &amp;quot;Droid Sans Mono&amp;quot;, &amp;quot;monospace&amp;quot;, monospace; font-size: 14px; line-height: 19px;&quot;&gt;&lt;span style=&quot;color: #ff6480;&quot;&gt;TuiState&lt;/span&gt;&lt;span style=&quot;color: #7a82da;&quot;&gt;::&lt;/span&gt;&lt;span style=&quot;color: #9f7efe;&quot;&gt;AddRemote&lt;/span&gt;(&lt;span style=&quot;color: #ff6480;&quot;&gt;AddRemoteTuiStep&lt;/span&gt;&lt;span style=&quot;color: #7a82da;&quot;&gt;::&lt;/span&gt;&lt;span style=&quot;color: #9f7efe;&quot;&gt;SettingRemoteUrl&lt;/span&gt;)&lt;/div&gt;&lt;/pre&gt;" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#282C34;strokeColor=#314354;fontColor=#ffffff;" vertex="1" parent="1">
+          <mxGeometry x="327.51" y="500" width="412.49" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="Re0q_Iw5m2-wxeKRrN7d-30" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="Re0q_Iw5m2-wxeKRrN7d-27" target="Re0q_Iw5m2-wxeKRrN7d-29">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="Re0q_Iw5m2-wxeKRrN7d-27" value="The user inputs the host of the remote" style="html=1;whiteSpace=wrap;" vertex="1" parent="1">
+          <mxGeometry x="453.12" y="570" width="161.25" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="Re0q_Iw5m2-wxeKRrN7d-32" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="Re0q_Iw5m2-wxeKRrN7d-29" target="Re0q_Iw5m2-wxeKRrN7d-31">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="Re0q_Iw5m2-wxeKRrN7d-29" value="&lt;pre&gt;&lt;div style=&quot;color: rgb(171, 178, 191); background-color: rgb(40, 44, 52); font-family: &amp;quot;UbuntuMono Nerd Font&amp;quot;, &amp;quot;Droid Sans Mono&amp;quot;, &amp;quot;monospace&amp;quot;, monospace, &amp;quot;Droid Sans Mono&amp;quot;, &amp;quot;monospace&amp;quot;, monospace; font-size: 14px; line-height: 19px;&quot;&gt;&lt;span style=&quot;color: #ff6480;&quot;&gt;TuiState&lt;/span&gt;&lt;span style=&quot;color: #7a82da;&quot;&gt;::&lt;/span&gt;&lt;span style=&quot;color: #9f7efe;&quot;&gt;AddRemote&lt;/span&gt;(&lt;span style=&quot;color: #ff6480;&quot;&gt;AddRemoteTuiStep&lt;/span&gt;&lt;span style=&quot;color: #7a82da;&quot;&gt;::&lt;/span&gt;&lt;span style=&quot;color: #9f7efe;&quot;&gt;SettingRemotePath&lt;/span&gt;)&lt;/div&gt;&lt;/pre&gt;" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#282C34;strokeColor=#314354;fontColor=#ffffff;" vertex="1" parent="1">
+          <mxGeometry x="327.5" y="670" width="412.49" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="Re0q_Iw5m2-wxeKRrN7d-34" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="Re0q_Iw5m2-wxeKRrN7d-31" target="Re0q_Iw5m2-wxeKRrN7d-33">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="Re0q_Iw5m2-wxeKRrN7d-31" value="The user inputs the path of the directory on the remote that wants to sync" style="html=1;whiteSpace=wrap;" vertex="1" parent="1">
+          <mxGeometry x="453.12" y="750" width="161.25" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="Re0q_Iw5m2-wxeKRrN7d-36" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="1" source="Re0q_Iw5m2-wxeKRrN7d-33" target="Re0q_Iw5m2-wxeKRrN7d-35">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="Re0q_Iw5m2-wxeKRrN7d-33" value="&lt;pre&gt;&lt;div style=&quot;color: rgb(171, 178, 191); background-color: rgb(40, 44, 52); font-family: &amp;quot;UbuntuMono Nerd Font&amp;quot;, &amp;quot;Droid Sans Mono&amp;quot;, &amp;quot;monospace&amp;quot;, monospace, &amp;quot;Droid Sans Mono&amp;quot;, &amp;quot;monospace&amp;quot;, monospace; font-size: 14px; line-height: 19px;&quot;&gt;&lt;div style=&quot;line-height: 19px;&quot;&gt;&lt;span style=&quot;color: #ff6480;&quot;&gt;TuiState&lt;/span&gt;&lt;span style=&quot;color: #7a82da;&quot;&gt;::&lt;/span&gt;&lt;span style=&quot;color: #9f7efe;&quot;&gt;AddRemote&lt;/span&gt;(&lt;span style=&quot;color: #ff6480;&quot;&gt;AddRemoteTuiStep&lt;/span&gt;&lt;span style=&quot;color: #7a82da;&quot;&gt;::&lt;/span&gt;&lt;span style=&quot;color: #9f7efe;&quot;&gt;SettingLocalPath&lt;/span&gt;)&lt;/div&gt;&lt;/div&gt;&lt;/pre&gt;" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#282C34;strokeColor=#314354;fontColor=#ffffff;" vertex="1" parent="1">
+          <mxGeometry x="327.51" y="860" width="412.49" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="Re0q_Iw5m2-wxeKRrN7d-38" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="Re0q_Iw5m2-wxeKRrN7d-35" target="Re0q_Iw5m2-wxeKRrN7d-37">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="Re0q_Iw5m2-wxeKRrN7d-35" value="The user inputs the path of the local directory that wants to sync" style="html=1;whiteSpace=wrap;" vertex="1" parent="1">
+          <mxGeometry x="453.12" y="940" width="161.25" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="Re0q_Iw5m2-wxeKRrN7d-40" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="Re0q_Iw5m2-wxeKRrN7d-37" target="Re0q_Iw5m2-wxeKRrN7d-39">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="Re0q_Iw5m2-wxeKRrN7d-37" value="&lt;pre&gt;&lt;div style=&quot;color: rgb(171, 178, 191); background-color: rgb(40, 44, 52); font-family: &amp;quot;UbuntuMono Nerd Font&amp;quot;, &amp;quot;Droid Sans Mono&amp;quot;, &amp;quot;monospace&amp;quot;, monospace, &amp;quot;Droid Sans Mono&amp;quot;, &amp;quot;monospace&amp;quot;, monospace; font-size: 14px; line-height: 19px;&quot;&gt;&lt;div style=&quot;line-height: 19px;&quot;&gt;&lt;div style=&quot;line-height: 19px;&quot;&gt;&lt;span style=&quot;color: #ff6480;&quot;&gt;TuiState&lt;/span&gt;&lt;span style=&quot;color: #7a82da;&quot;&gt;::&lt;/span&gt;&lt;span style=&quot;color: #9f7efe;&quot;&gt;AddRemote&lt;/span&gt;(&lt;span style=&quot;color: #ff6480;&quot;&gt;AddRemoteTuiStep&lt;/span&gt;&lt;span style=&quot;color: #7a82da;&quot;&gt;::&lt;/span&gt;&lt;span style=&quot;color: #9f7efe;&quot;&gt;AskingIfNeedsLogin&lt;/span&gt;)&lt;/div&gt;&lt;/div&gt;&lt;/div&gt;&lt;/pre&gt;" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#282C34;strokeColor=#314354;fontColor=#ffffff;" vertex="1" parent="1">
+          <mxGeometry x="327.5" y="1050" width="412.49" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="Re0q_Iw5m2-wxeKRrN7d-43" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="Re0q_Iw5m2-wxeKRrN7d-39" target="Re0q_Iw5m2-wxeKRrN7d-42">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="Re0q_Iw5m2-wxeKRrN7d-44" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="1" source="Re0q_Iw5m2-wxeKRrN7d-39" target="Re0q_Iw5m2-wxeKRrN7d-41">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="Re0q_Iw5m2-wxeKRrN7d-39" value="Ask the user if the server uses anonimous login or need an username and a password" style="html=1;whiteSpace=wrap;" vertex="1" parent="1">
+          <mxGeometry x="453.12" y="1120" width="161.25" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="Re0q_Iw5m2-wxeKRrN7d-57" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=1;entryY=0.5;entryDx=0;entryDy=0;exitX=0.5;exitY=1;exitDx=0;exitDy=0;" edge="1" parent="1" source="Re0q_Iw5m2-wxeKRrN7d-41" target="Re0q_Iw5m2-wxeKRrN7d-55">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="Re0q_Iw5m2-wxeKRrN7d-41" value="If &quot;Anonimous login&quot; is selected" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#76608a;fontColor=#ffffff;strokeColor=#432D57;" vertex="1" parent="1">
+          <mxGeometry x="865.63" y="1140" width="198.74" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="Re0q_Iw5m2-wxeKRrN7d-46" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="Re0q_Iw5m2-wxeKRrN7d-42" target="Re0q_Iw5m2-wxeKRrN7d-45">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="Re0q_Iw5m2-wxeKRrN7d-42" value="If &quot;Username and password&quot; is selected" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#76608a;fontColor=#ffffff;strokeColor=#432D57;" vertex="1" parent="1">
+          <mxGeometry x="415.95" y="1240" width="235.61" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="Re0q_Iw5m2-wxeKRrN7d-50" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="Re0q_Iw5m2-wxeKRrN7d-45" target="Re0q_Iw5m2-wxeKRrN7d-49">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="Re0q_Iw5m2-wxeKRrN7d-45" value="&lt;pre&gt;&lt;div style=&quot;color: rgb(171, 178, 191); background-color: rgb(40, 44, 52); font-family: &amp;quot;UbuntuMono Nerd Font&amp;quot;, &amp;quot;Droid Sans Mono&amp;quot;, &amp;quot;monospace&amp;quot;, monospace, &amp;quot;Droid Sans Mono&amp;quot;, &amp;quot;monospace&amp;quot;, monospace; font-size: 14px; line-height: 19px;&quot;&gt;&lt;div style=&quot;line-height: 19px;&quot;&gt;&lt;div style=&quot;line-height: 19px;&quot;&gt;&lt;div style=&quot;line-height: 19px;&quot;&gt;&lt;span style=&quot;color: #ff6480;&quot;&gt;TuiState&lt;/span&gt;&lt;span style=&quot;color: #7a82da;&quot;&gt;::&lt;/span&gt;&lt;span style=&quot;color: #9f7efe;&quot;&gt;AddRemote&lt;/span&gt;(&lt;span style=&quot;color: #ff6480;&quot;&gt;AddRemoteTuiStep&lt;/span&gt;&lt;span style=&quot;color: #7a82da;&quot;&gt;::&lt;/span&gt;&lt;span style=&quot;color: #9f7efe;&quot;&gt;SettingRemoteUsername&lt;/span&gt;)&lt;/div&gt;&lt;/div&gt;&lt;/div&gt;&lt;/div&gt;&lt;/pre&gt;" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#282C34;strokeColor=#314354;fontColor=#ffffff;" vertex="1" parent="1">
+          <mxGeometry x="317.49" y="1330" width="432.5" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="Re0q_Iw5m2-wxeKRrN7d-52" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="Re0q_Iw5m2-wxeKRrN7d-49" target="Re0q_Iw5m2-wxeKRrN7d-51">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="Re0q_Iw5m2-wxeKRrN7d-49" value="The user inputs the username" style="html=1;whiteSpace=wrap;" vertex="1" parent="1">
+          <mxGeometry x="453.12" y="1420" width="161.25" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="Re0q_Iw5m2-wxeKRrN7d-54" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="Re0q_Iw5m2-wxeKRrN7d-51" target="Re0q_Iw5m2-wxeKRrN7d-53">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="Re0q_Iw5m2-wxeKRrN7d-51" value="&lt;pre&gt;&lt;div style=&quot;color: rgb(171, 178, 191); background-color: rgb(40, 44, 52); font-family: &amp;quot;UbuntuMono Nerd Font&amp;quot;, &amp;quot;Droid Sans Mono&amp;quot;, &amp;quot;monospace&amp;quot;, monospace, &amp;quot;Droid Sans Mono&amp;quot;, &amp;quot;monospace&amp;quot;, monospace; font-size: 14px; line-height: 19px;&quot;&gt;&lt;div style=&quot;line-height: 19px;&quot;&gt;&lt;div style=&quot;line-height: 19px;&quot;&gt;&lt;div style=&quot;line-height: 19px;&quot;&gt;&lt;div style=&quot;line-height: 19px;&quot;&gt;&lt;span style=&quot;color: #ff6480;&quot;&gt;TuiState&lt;/span&gt;&lt;span style=&quot;color: #7a82da;&quot;&gt;::&lt;/span&gt;&lt;span style=&quot;color: #9f7efe;&quot;&gt;AddRemote&lt;/span&gt;(&lt;span style=&quot;color: #ff6480;&quot;&gt;AddRemoteTuiStep&lt;/span&gt;&lt;span style=&quot;color: #7a82da;&quot;&gt;::&lt;/span&gt;&lt;span style=&quot;color: #9f7efe;&quot;&gt;SettingRemotePassword&lt;/span&gt;)&lt;/div&gt;&lt;/div&gt;&lt;/div&gt;&lt;/div&gt;&lt;/div&gt;&lt;/pre&gt;" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#282C34;strokeColor=#314354;fontColor=#ffffff;" vertex="1" parent="1">
+          <mxGeometry x="317.49" y="1540" width="432.5" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="Re0q_Iw5m2-wxeKRrN7d-56" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="Re0q_Iw5m2-wxeKRrN7d-53" target="Re0q_Iw5m2-wxeKRrN7d-55">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="Re0q_Iw5m2-wxeKRrN7d-53" value="The user inputs the&amp;nbsp;&lt;div&gt;password&lt;/div&gt;" style="html=1;whiteSpace=wrap;" vertex="1" parent="1">
+          <mxGeometry x="453.13" y="1630" width="161.25" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="Re0q_Iw5m2-wxeKRrN7d-59" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="Re0q_Iw5m2-wxeKRrN7d-55" target="Re0q_Iw5m2-wxeKRrN7d-58">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="Re0q_Iw5m2-wxeKRrN7d-55" value="&lt;pre&gt;&lt;div style=&quot;color: rgb(171, 178, 191); background-color: rgb(40, 44, 52); font-family: &amp;quot;UbuntuMono Nerd Font&amp;quot;, &amp;quot;Droid Sans Mono&amp;quot;, &amp;quot;monospace&amp;quot;, monospace, &amp;quot;Droid Sans Mono&amp;quot;, &amp;quot;monospace&amp;quot;, monospace; font-size: 14px; line-height: 19px;&quot;&gt;&lt;div style=&quot;line-height: 19px;&quot;&gt;&lt;div style=&quot;line-height: 19px;&quot;&gt;&lt;div style=&quot;line-height: 19px;&quot;&gt;&lt;div style=&quot;line-height: 19px;&quot;&gt;&lt;span style=&quot;color: #ff6480;&quot;&gt;TuiState&lt;/span&gt;&lt;span style=&quot;color: #7a82da;&quot;&gt;::&lt;/span&gt;&lt;span style=&quot;color: #9f7efe;&quot;&gt;AddRemote&lt;/span&gt;(&lt;span style=&quot;color: #ff6480;&quot;&gt;AddRemoteTuiStep&lt;/span&gt;&lt;span style=&quot;color: #7a82da;&quot;&gt;::Basic&lt;/span&gt;&lt;span style=&quot;color: #9f7efe;&quot;&gt;Summary&lt;/span&gt;)&lt;/div&gt;&lt;/div&gt;&lt;/div&gt;&lt;/div&gt;&lt;/div&gt;&lt;/pre&gt;" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#282C34;strokeColor=#314354;fontColor=#ffffff;" vertex="1" parent="1">
+          <mxGeometry x="338.73999999999995" y="1750" width="390" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="Re0q_Iw5m2-wxeKRrN7d-61" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="1" source="Re0q_Iw5m2-wxeKRrN7d-58" target="Re0q_Iw5m2-wxeKRrN7d-60">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="Re0q_Iw5m2-wxeKRrN7d-70" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="Re0q_Iw5m2-wxeKRrN7d-58" target="Re0q_Iw5m2-wxeKRrN7d-69">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="Re0q_Iw5m2-wxeKRrN7d-58" value="The user is shown the values previously entered and is asked if they want to save basic configurations or continue to more advanced settings" style="html=1;whiteSpace=wrap;" vertex="1" parent="1">
+          <mxGeometry x="438.12" y="1840" width="191.25" height="90" as="geometry" />
+        </mxCell>
+        <mxCell id="Re0q_Iw5m2-wxeKRrN7d-64" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="Re0q_Iw5m2-wxeKRrN7d-60" target="Re0q_Iw5m2-wxeKRrN7d-63">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="Re0q_Iw5m2-wxeKRrN7d-60" value="If &quot;Save basic settings&quot; is selected" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#76608a;fontColor=#ffffff;strokeColor=#432D57;" vertex="1" parent="1">
+          <mxGeometry x="865.63" y="1870" width="235.61" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="Re0q_Iw5m2-wxeKRrN7d-66" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="Re0q_Iw5m2-wxeKRrN7d-63" target="Re0q_Iw5m2-wxeKRrN7d-65">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="Re0q_Iw5m2-wxeKRrN7d-63" value="&lt;pre&gt;&lt;div style=&quot;color: rgb(171, 178, 191); background-color: rgb(40, 44, 52); font-family: &amp;quot;UbuntuMono Nerd Font&amp;quot;, &amp;quot;Droid Sans Mono&amp;quot;, &amp;quot;monospace&amp;quot;, monospace, &amp;quot;Droid Sans Mono&amp;quot;, &amp;quot;monospace&amp;quot;, monospace; font-size: 14px; line-height: 19px;&quot;&gt;&lt;div style=&quot;line-height: 19px;&quot;&gt;&lt;div style=&quot;line-height: 19px;&quot;&gt;&lt;div style=&quot;line-height: 19px;&quot;&gt;&lt;div style=&quot;line-height: 19px;&quot;&gt;&lt;div style=&quot;line-height: 19px;&quot;&gt;&lt;span style=&quot;color: #ff6480;&quot;&gt;TuiState&lt;/span&gt;&lt;span style=&quot;color: #7a82da;&quot;&gt;::&lt;/span&gt;&lt;span style=&quot;color: #9f7efe;&quot;&gt;AddRemoteDone&lt;/span&gt;&lt;/div&gt;&lt;/div&gt;&lt;/div&gt;&lt;/div&gt;&lt;/div&gt;&lt;/div&gt;&lt;/pre&gt;" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#282C34;strokeColor=#314354;fontColor=#ffffff;" vertex="1" parent="1">
+          <mxGeometry x="888.44" y="1970" width="190" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="Re0q_Iw5m2-wxeKRrN7d-68" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0.5;entryY=0;entryDx=0;entryDy=0;" edge="1" parent="1" source="Re0q_Iw5m2-wxeKRrN7d-65" target="Re0q_Iw5m2-wxeKRrN7d-67">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="Re0q_Iw5m2-wxeKRrN7d-65" value="Returns TuiResult::CreateRemote(NewRemoteDetails) to main.rs, which then should save the new remote." style="html=1;whiteSpace=wrap;" vertex="1" parent="1">
+          <mxGeometry x="857.3399999999999" y="2050" width="252.19" height="90" as="geometry" />
+        </mxCell>
+        <mxCell id="Re0q_Iw5m2-wxeKRrN7d-67" value="" style="ellipse;html=1;shape=endState;fillColor=#f0a30a;strokeColor=#BD7000;fontColor=#000000;" vertex="1" parent="1">
+          <mxGeometry x="968.44" y="2200" width="30" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="Re0q_Iw5m2-wxeKRrN7d-69" value="If &quot;Advanced settings&quot; is selected" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#76608a;fontColor=#ffffff;strokeColor=#432D57;" vertex="1" parent="1">
+          <mxGeometry x="415.95" y="2000" width="235.61" height="30" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
