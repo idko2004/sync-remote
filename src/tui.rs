@@ -995,7 +995,7 @@ fn draw_options(redraw_options: &RedrawOptions, mut stdout: Stdout) -> Stdout
 				}
 				else
 				{
-					let _ = queue!(stdout, SetBackgroundColor(Color::White));
+					let _ = queue!(stdout, SetBackgroundColor(Color::Yellow));
 					let _ = queue!(stdout, SetForegroundColor(Color::Black));
 					let _ = queue!(stdout, SetAttribute(Attribute::Bold));
 					let _ = queue!(stdout, Print(format!(" -> {item} ")));
