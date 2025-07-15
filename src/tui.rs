@@ -902,7 +902,8 @@ fn draw_box(title: &String, width: u16, height: u16, mut stdout: Stdout) -> Stdo
 	//Draw top horizontal line
 	let mut line =  String::with_capacity(width as usize);
 	line.push(' ');
-	line.push('\u{256D}');
+	//line.push('\u{256D}');
+	line.push('\u{2554}');
 	
 	let mut i: u16 = 3;
 	loop
@@ -914,7 +915,8 @@ fn draw_box(title: &String, width: u16, height: u16, mut stdout: Stdout) -> Stdo
 		}
 		else
 		{
-			line.push('\u{2500}');
+			//line.push('\u{2500}');
+			line.push('\u{2550}');
 			i += 1;
 		}
 
@@ -923,7 +925,8 @@ fn draw_box(title: &String, width: u16, height: u16, mut stdout: Stdout) -> Stdo
 			break;
 		}
 	}
-	line.push('\u{256E}');
+	//line.push('\u{256E}');
+	line.push('\u{2557}');
 	line.push('\n');
 
 	let _ = queue!(stdout, Print(line.as_str()));
@@ -933,9 +936,10 @@ fn draw_box(title: &String, width: u16, height: u16, mut stdout: Stdout) -> Stdo
 	loop
 	{
 		let _ = queue!(stdout, MoveTo(1, i));
-		let _ = queue!(stdout, Print("\u{2502}"));
+		//let _ = queue!(stdout, Print("\u{2502}"));
+		let _ = queue!(stdout, Print("\u{2551}"));
 		let _ = queue!(stdout, MoveTo(width - 2, i));
-		let _ = queue!(stdout, Print("\u{2502}"));
+		let _ = queue!(stdout, Print("\u{2551}"));
 
 		i += 1;
 
@@ -949,12 +953,14 @@ fn draw_box(title: &String, width: u16, height: u16, mut stdout: Stdout) -> Stdo
 	let mut line =  String::with_capacity(width as usize);
 	line.push(' ');
 	line.push(' ');
-	line.push('\u{2570}');
+	//line.push('\u{2570}');
+	line.push('\u{255A}');
 	
 	let mut i: u16 = 3;
 	loop
 	{
-		line.push('\u{2500}');
+		//line.push('\u{2500}');
+		line.push('\u{2550}');
 		i += 1;
 
 		if i >= width - 1
@@ -962,7 +968,8 @@ fn draw_box(title: &String, width: u16, height: u16, mut stdout: Stdout) -> Stdo
 			break;
 		}
 	}
-	line.push('\u{256F}');
+	//line.push('\u{256F}');
+	line.push('\u{255D}');
 	line.push('\n');
 	let _ = queue!(stdout, Print(line.as_str()));
 
