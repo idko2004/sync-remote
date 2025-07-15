@@ -33,24 +33,104 @@ struct LinkedFile
 	sync_veredict: SyncVeredict,
 }
 
+struct Report
+{
+	uploaded: usize,
+	downloaded: usize,
+	ignored: usize,
+	errors: usize,
+}
+
+impl Report
+{
+	fn new() -> Self
+	{
+		Self
+		{
+			uploaded: 0,
+			downloaded: 0,
+			ignored: 0,
+			errors: 0,
+		}
+	}
+
+	fn print(&self)
+	{
+		let mut stdout = io::stdout();
+		let _ = queue!(stdout, Print("\n\n"));
+		let _ = queue!(stdout, SetAttribute(Attribute::Bold));
+		let _ = queue!(stdout, Print(format!("{} ", self.uploaded)));
+		let _ = queue!(stdout, SetForegroundColor(Color::Green));
+		let _ = queue!(stdout, Print("Uploaded"));
+		let _ = queue!(stdout, SetForegroundColor(Color::Reset));
+		let _ = queue!(stdout, Print(format!(", {} ", self.downloaded)));
+		let _ = queue!(stdout, SetForegroundColor(Color::Blue));
+		let _ = queue!(stdout, Print("Downloaded"));
+		let _ = queue!(stdout, SetForegroundColor(Color::Reset));
+		let _ = queue!(stdout, Print(format!(", {} ", self.ignored)));
+		let _ = queue!(stdout, SetForegroundColor(Color::Yellow));
+		let _ = queue!(stdout, Print("Ignored"));
+		let _ = queue!(stdout, SetForegroundColor(Color::Reset));
+		let _ = queue!(stdout, Print(format!(", {} ", self.errors)));
+		let _ = queue!(stdout, SetForegroundColor(Color::Red));
+		let _ = queue!(stdout, Print("Errors"));
+		let _ = queue!(stdout, SetForegroundColor(Color::Reset));
+		let _ = queue!(stdout, SetAttribute(Attribute::Reset));
+		let _ = queue!(stdout, Print(".\n"));
+		let _ = stdout.flush();
+	}
+}
+
 pub fn start_sync_blocking(sync_location: &SyncLocation)
 {
-	println!("\nRemote: {}", sync_location.name);
-	println!("Host: {}\n", sync_location.remote);
-	println!("* Connecting...");
+	let mut stdout = io::stdout();
+
+	{ //Initial message
+		let _ = queue!(stdout, SetAttribute(Attribute::Bold));
+		let _ = queue!(stdout, Print("\nRemote: "));
+		let _ = queue!(stdout, SetAttribute(Attribute::Reset));
+		let _ = queue!(stdout, Print(format!("{}", sync_location.name)));
+		let _ = queue!(stdout, SetAttribute(Attribute::Bold));
+		let _ = queue!(stdout, Print("\nHost: "));
+		let _ = queue!(stdout, SetAttribute(Attribute::Reset));
+		let _ = queue!(stdout, Print(format!("{}\n\n", sync_location.remote)));
+		let _ = queue!(stdout, SetAttribute(Attribute::Bold));
+		let _ = queue!(stdout, SetForegroundColor(Color::Yellow));
+		let _ = queue!(stdout, Print("*"));
+		let _ = queue!(stdout, SetForegroundColor(Color::Reset));
+		let _ = queue!(stdout, Print(" Connecting...\n"));
+		let _ = queue!(stdout, SetAttribute(Attribute::Reset));
+		let _ = stdout.flush();
+	}
+
 	let ftp_stream = match FtpStream::connect(&sync_location.remote)
 	{
 		Ok(value) => value,
 		Err(error) =>
 		{
-			println!("[ERROR] Failed to connect to server, {}", error);
+			let _ = queue!(stdout, SetAttribute(Attribute::Bold));
+			let _ = queue!(stdout, SetForegroundColor(Color::Red));
+			let _ = queue!(stdout, Print("\n[ERROR] "));
+			let _ = queue!(stdout, SetAttribute(Attribute::Reset));
+			let _ = queue!(stdout, SetForegroundColor(Color::Reset));
+			let _ = queue!(stdout, Print(format!("Failed to connect to server! ({})\n", error)));
+			let _ = stdout.flush();
 			return;
 		}
 	};
 
 	let mut ftp_stream = ftp_stream.active_mode(Duration::from_secs(120));
 
-	println!("* Logging in...");
+	{ //Logging in message
+		let _ = queue!(stdout, SetAttribute(Attribute::Bold));
+		let _ = queue!(stdout, SetForegroundColor(Color::Yellow));
+		let _ = queue!(stdout, Print("*"));
+		let _ = queue!(stdout, SetForegroundColor(Color::Reset));
+		let _ = queue!(stdout, Print(" Logging in...\n"));
+		let _ = queue!(stdout, SetAttribute(Attribute::Reset));
+		let _ = stdout.flush();
+	}
+
 	match ftp_stream.login(&sync_location.remote_username, &sync_location.remote_password)
 	{
 		Ok(_) =>
@@ -60,24 +140,65 @@ pub fn start_sync_blocking(sync_location: &SyncLocation)
 		}
 		Err(error) =>
 		{
-			println!("[ERROR] Failed to log in, {}", error);
+			let _ = queue!(stdout, SetAttribute(Attribute::Bold));
+			let _ = queue!(stdout, SetForegroundColor(Color::Red));
+			let _ = queue!(stdout, Print("\n[ERROR] "));
+			let _ = queue!(stdout, SetAttribute(Attribute::Reset));
+			let _ = queue!(stdout, SetForegroundColor(Color::Reset));
+			let _ = queue!(stdout, Print(format!("Failed to log in! ({})\n", error)));
+			let _ = stdout.flush();
 			return;
 		}
 	}
 
-	println!("* Listing remote files...");
+	{ //Listing remote files message
+		let _ = queue!(stdout, SetAttribute(Attribute::Bold));
+		let _ = queue!(stdout, SetForegroundColor(Color::Yellow));
+		let _ = queue!(stdout, Print("*"));
+		let _ = queue!(stdout, SetForegroundColor(Color::Reset));
+		let _ = queue!(stdout, Print(" Listing remote files...\n"));
+		let _ = queue!(stdout, SetAttribute(Attribute::Reset));
+		let _ = stdout.flush();
+	}
+
 	let all_remote_files = get_all_remote_files_recursive_from(&sync_location.remote_path, &mut ftp_stream);
 
-	println!("* Listing local files...");
+	{ //Listing local files message
+		let _ = queue!(stdout, SetAttribute(Attribute::Bold));
+		let _ = queue!(stdout, SetForegroundColor(Color::Yellow));
+		let _ = queue!(stdout, Print("*"));
+		let _ = queue!(stdout, SetForegroundColor(Color::Reset));
+		let _ = queue!(stdout, Print(" Listing local files...\n"));
+		let _ = queue!(stdout, SetAttribute(Attribute::Reset));
+		let _ = stdout.flush();
+	}
+
 	let all_local_files = get_all_local_files_recursive_from(&sync_location.local_path);
 
-	println!("* Linking files...");
+	{ //Thinking how to sync message
+		let _ = queue!(stdout, SetAttribute(Attribute::Bold));
+		let _ = queue!(stdout, SetForegroundColor(Color::Yellow));
+		let _ = queue!(stdout, Print("*"));
+		let _ = queue!(stdout, SetForegroundColor(Color::Reset));
+		let _ = queue!(stdout, Print(" Thinking how to sync...\n"));
+		let _ = queue!(stdout, SetAttribute(Attribute::Reset));
+		let _ = stdout.flush();
+	}
+
 	let all_files_linked = link_all_files(&all_remote_files, &all_local_files, sync_location);
 
-	println!("* Thinking how to sync...");
 	let all_files_linked = set_sync_veredicts(all_files_linked);
 	
-	println!("* Syncing...");
+	{ //Syncing message
+		let _ = queue!(stdout, SetAttribute(Attribute::Bold));
+		let _ = queue!(stdout, SetForegroundColor(Color::Yellow));
+		let _ = queue!(stdout, Print("*"));
+		let _ = queue!(stdout, SetForegroundColor(Color::Reset));
+		let _ = queue!(stdout, Print(" Syncing...\n"));
+		let _ = queue!(stdout, SetAttribute(Attribute::Reset));
+		let _ = stdout.flush();
+	}
+
 	sync_files(&all_files_linked, sync_location, &mut ftp_stream);
 
 	/*
@@ -180,7 +301,14 @@ fn get_all_remote_files_recursive_from(directory: &String, ftp_stream: &mut FtpS
 			},
 			None =>
 			{
-				println!("[ERROR] Failed to list remote directory {}", current_directory);
+				let mut stdout = io::stdout();
+				let _ = queue!(stdout, SetAttribute(Attribute::Bold));
+				let _ = queue!(stdout, SetForegroundColor(Color::Red));
+				let _ = queue!(stdout, Print("\n[ERROR] "));
+				let _ = queue!(stdout, SetAttribute(Attribute::Reset));
+				let _ = queue!(stdout, SetForegroundColor(Color::Reset));
+				let _ = queue!(stdout, Print(format!("Failed to list remote directory \"{}\"!\n", current_directory)));
+				let _ = stdout.flush();
 			}
 		}
 
@@ -202,7 +330,14 @@ fn list_remote_directory(directory: &String, ftp_stream: &mut FtpStream) -> Opti
 		Ok(value) => value,
 		Err(error) =>
 		{
-			println!("[ERROR] Failed to list content of directory {directory}, {error}");
+			let mut stdout = io::stdout();
+			let _ = queue!(stdout, SetAttribute(Attribute::Bold));
+			let _ = queue!(stdout, SetForegroundColor(Color::Red));
+			let _ = queue!(stdout, Print("\n[ERROR] "));
+			let _ = queue!(stdout, SetAttribute(Attribute::Reset));
+			let _ = queue!(stdout, SetForegroundColor(Color::Reset));
+			let _ = queue!(stdout, Print(format!("Failed to list content of directory \"{directory}\", ({error})\n")));
+			let _ = stdout.flush();
 			return None;
 		}
 	};
@@ -219,7 +354,14 @@ fn list_remote_directory(directory: &String, ftp_stream: &mut FtpStream) -> Opti
 			},
 			Err(error) =>
 			{
-				println!("[ERROR] Failed to parse remote directory, {}", error);
+				let mut stdout = io::stdout();
+				let _ = queue!(stdout, SetAttribute(Attribute::Bold));
+				let _ = queue!(stdout, SetForegroundColor(Color::Red));
+				let _ = queue!(stdout, Print("\n[ERROR] "));
+				let _ = queue!(stdout, SetAttribute(Attribute::Reset));
+				let _ = queue!(stdout, SetForegroundColor(Color::Reset));
+				let _ = queue!(stdout, Print(format!("Failed to parse remote directory! ({})\n", error)));
+				let _ = stdout.flush();
 				continue;
 			}
 		}
@@ -298,14 +440,28 @@ fn get_all_local_files_recursive_from(directory: &String) -> Vec<File>
 																	Some(value) => value,
 																	None =>
 																	{
-																		println!("[ERROR] Failed to trim local file nanoseconds");
+																		let mut stdout = io::stdout();
+																		let _ = queue!(stdout, SetAttribute(Attribute::Bold));
+																		let _ = queue!(stdout, SetForegroundColor(Color::Red));
+																		let _ = queue!(stdout, Print("\n[ERROR] "));
+																		let _ = queue!(stdout, SetAttribute(Attribute::Reset));
+																		let _ = queue!(stdout, SetForegroundColor(Color::Reset));
+																		let _ = queue!(stdout, Print(format!("Failed to trim local file nanoseconds!\n")));
+																		let _ = stdout.flush();
 																		continue;
 																	}
 																}
 															},
 															None =>
 															{
-																println!("[ERROR] Failed to trim local file seconds");
+																let mut stdout = io::stdout();
+																let _ = queue!(stdout, SetAttribute(Attribute::Bold));
+																let _ = queue!(stdout, SetForegroundColor(Color::Red));
+																let _ = queue!(stdout, Print("\n[ERROR] "));
+																let _ = queue!(stdout, SetAttribute(Attribute::Reset));
+																let _ = queue!(stdout, SetForegroundColor(Color::Reset));
+																let _ = queue!(stdout, Print(format!("Failed to trim local file seconds!\n")));
+																let _ = stdout.flush();
 																continue;
 															}
 														};
@@ -314,14 +470,28 @@ fn get_all_local_files_recursive_from(directory: &String) -> Vec<File>
 													},
 													Err(error) =>
 													{
-														println!("[ERROR] Failed to get last modified time of file in local directory \"{}\", {}", fullpath, error);
+														let mut stdout = io::stdout();
+														let _ = queue!(stdout, SetAttribute(Attribute::Bold));
+														let _ = queue!(stdout, SetForegroundColor(Color::Red));
+														let _ = queue!(stdout, Print("\n[ERROR] "));
+														let _ = queue!(stdout, SetAttribute(Attribute::Reset));
+														let _ = queue!(stdout, SetForegroundColor(Color::Reset));
+														let _ = queue!(stdout, Print(format!("Failed to get last modified time of file in local directory \"{}\", {}", fullpath, error)));
+														let _ = stdout.flush();
 														continue;
 													}
 												}
 											},
 											Err(error) =>
 											{
-												println!("[ERROR] Failed to get metadata of file in local directory \"{}\", {}", fullpath, error);
+												let mut stdout = io::stdout();
+												let _ = queue!(stdout, SetAttribute(Attribute::Bold));
+												let _ = queue!(stdout, SetForegroundColor(Color::Red));
+												let _ = queue!(stdout, Print("\n[ERROR] "));
+												let _ = queue!(stdout, SetAttribute(Attribute::Reset));
+												let _ = queue!(stdout, SetForegroundColor(Color::Reset));
+												let _ = queue!(stdout, Print(format!("Failed to get metadata of file in local directory \"{}\", {}", fullpath, error)));
+												let _ = stdout.flush();
 												continue;
 											}
 										};
@@ -352,20 +522,41 @@ fn get_all_local_files_recursive_from(directory: &String) -> Vec<File>
 								},
 								Err(error) =>
 								{
-									println!("[ERROR] Failed to get file type of something in local directory, {}", error);
+									let mut stdout = io::stdout();
+									let _ = queue!(stdout, SetAttribute(Attribute::Bold));
+									let _ = queue!(stdout, SetForegroundColor(Color::Red));
+									let _ = queue!(stdout, Print("\n[ERROR] "));
+									let _ = queue!(stdout, SetAttribute(Attribute::Reset));
+									let _ = queue!(stdout, SetForegroundColor(Color::Reset));
+									let _ = queue!(stdout, Print(format!("Failed to get file type of something in local directory! ({})\n", error)));
+									let _ = stdout.flush();
 								}
 							}
 						},
 						Err(error) =>
 						{
-							println!("[ERROR] Failed to access something in local directory, {}", error);
+							let mut stdout = io::stdout();
+							let _ = queue!(stdout, SetAttribute(Attribute::Bold));
+							let _ = queue!(stdout, SetForegroundColor(Color::Red));
+							let _ = queue!(stdout, Print("\n[ERROR] "));
+							let _ = queue!(stdout, SetAttribute(Attribute::Reset));
+							let _ = queue!(stdout, SetForegroundColor(Color::Reset));
+							let _ = queue!(stdout, Print(format!("Failed to access something in local directory! ({})\n", error)));
+							let _ = stdout.flush();
 						}
 					}
 				}
 			},
 			None =>
 			{
-				println!("[ERROR] Failed to list local directory {}", current_directory);
+				let mut stdout = io::stdout();
+				let _ = queue!(stdout, SetAttribute(Attribute::Bold));
+				let _ = queue!(stdout, SetForegroundColor(Color::Red));
+				let _ = queue!(stdout, Print("\n[ERROR] "));
+				let _ = queue!(stdout, SetAttribute(Attribute::Reset));
+				let _ = queue!(stdout, SetForegroundColor(Color::Reset));
+				let _ = queue!(stdout, Print(format!("Failed to list local directory \"{}\"\n", current_directory)));
+				let _ = stdout.flush();
 			}
 		}
 
@@ -577,13 +768,16 @@ fn get_relative_directory(file: &File, sync_location_path: &String) -> String
 
 fn sync_files(all_linked_files: &Vec<LinkedFile>, sync_location: &SyncLocation, ftp_stream: &mut FtpStream)
 {
-	do_nothing(all_linked_files);
-	upload_to_remote(all_linked_files, sync_location, ftp_stream);
-	download_to_local(all_linked_files, sync_location, ftp_stream);
+	let mut report = Report::new();
 
+	do_nothing(all_linked_files, &mut report);
+	upload_to_remote(all_linked_files, sync_location, ftp_stream, &mut report);
+	download_to_local(all_linked_files, sync_location, ftp_stream, &mut report);
+
+	report.print();
 }
 
-fn upload_to_remote(all_linked_files: &Vec<LinkedFile>, sync_location: &SyncLocation, ftp_stream: &mut FtpStream)
+fn upload_to_remote(all_linked_files: &Vec<LinkedFile>, sync_location: &SyncLocation, ftp_stream: &mut FtpStream, report: &mut Report)
 {
 	let mut stdout = io::stdout();
 
@@ -621,6 +815,7 @@ fn upload_to_remote(all_linked_files: &Vec<LinkedFile>, sync_location: &SyncLoca
 					Ok(_) => (),
 					Err(error) =>
 					{
+						report.errors += 1;
 						let _ = queue!(stdout, SetForegroundColor(Color::Red));
 						let _ = queue!(stdout, Print(" (failed!) \n[ERROR] "));
 						let _ = queue!(stdout, SetForegroundColor(Color::Reset));
@@ -637,6 +832,7 @@ fn upload_to_remote(all_linked_files: &Vec<LinkedFile>, sync_location: &SyncLoca
 				Some(value) => value,
 				None =>
 				{
+					report.errors += 1;
 					let _ = queue!(stdout, SetForegroundColor(Color::Red));
 					let _ = queue!(stdout, Print(" (failed!) \n[ERROR] "));
 					let _ = queue!(stdout, SetForegroundColor(Color::Reset));
@@ -651,6 +847,7 @@ fn upload_to_remote(all_linked_files: &Vec<LinkedFile>, sync_location: &SyncLoca
 				Ok(value) => value,
 				Err(error) =>
 				{
+					report.errors += 1;
 					let _ = queue!(stdout, SetForegroundColor(Color::Red));
 					let _ = queue!(stdout, Print(" (failed!) \n[ERROR] "));
 					let _ = queue!(stdout, SetForegroundColor(Color::Reset));
@@ -666,6 +863,7 @@ fn upload_to_remote(all_linked_files: &Vec<LinkedFile>, sync_location: &SyncLoca
 				Ok(_) => (),
 				Err(error) =>
 				{
+					report.errors += 1;
 					let _ = queue!(stdout, SetForegroundColor(Color::Red));
 					let _ = queue!(stdout, Print(" (failed!) \n[ERROR] "));
 					let _ = queue!(stdout, SetForegroundColor(Color::Reset));
@@ -675,6 +873,7 @@ fn upload_to_remote(all_linked_files: &Vec<LinkedFile>, sync_location: &SyncLoca
 				}
 			}
 
+			report.uploaded += 1;
 			{ //Imprimir bonito
 				let _ = queue!(stdout, SetForegroundColor(Color::Green));
 				let _ = queue!(stdout, Print(" (done!)"));
@@ -685,7 +884,7 @@ fn upload_to_remote(all_linked_files: &Vec<LinkedFile>, sync_location: &SyncLoca
 	}
 }
 
-fn download_to_local(all_linked_files: &Vec<LinkedFile>, sync_location: &SyncLocation, ftp_stream: &mut FtpStream)
+fn download_to_local(all_linked_files: &Vec<LinkedFile>, sync_location: &SyncLocation, ftp_stream: &mut FtpStream, report: &mut Report)
 {
 	let mut stdout = io::stdout();
 
@@ -723,6 +922,7 @@ fn download_to_local(all_linked_files: &Vec<LinkedFile>, sync_location: &SyncLoc
 					Ok(_) => (),
 					Err(error) =>
 					{
+						report.errors += 1;
 						let _ = queue!(stdout, SetForegroundColor(Color::Red));
 						let _ = queue!(stdout, Print(" (failed!) \n[ERROR] "));
 						let _ = queue!(stdout, SetForegroundColor(Color::Reset));
@@ -739,6 +939,7 @@ fn download_to_local(all_linked_files: &Vec<LinkedFile>, sync_location: &SyncLoc
 				Ok(value) => value,
 				Err(error) =>
 				{
+					report.errors += 1;
 					let _ = queue!(stdout, SetForegroundColor(Color::Red));
 					let _ = queue!(stdout, Print(" (failed!) \n[ERROR] "));
 					let _ = queue!(stdout, SetForegroundColor(Color::Reset));
@@ -754,6 +955,7 @@ fn download_to_local(all_linked_files: &Vec<LinkedFile>, sync_location: &SyncLoc
 				Some(value) => value,
 				None =>
 				{
+					report.errors += 1;
 					let _ = queue!(stdout, SetForegroundColor(Color::Red));
 					let _ = queue!(stdout, Print(" (failed!) \n[ERROR] "));
 					let _ = queue!(stdout, SetForegroundColor(Color::Reset));
@@ -768,6 +970,7 @@ fn download_to_local(all_linked_files: &Vec<LinkedFile>, sync_location: &SyncLoc
 				Ok(value) => value,
 				Err(error) =>
 				{
+					report.errors += 1;
 					let _ = queue!(stdout, SetForegroundColor(Color::Red));
 					let _ = queue!(stdout, Print(" (failed!) \n[ERROR] "));
 					let _ = queue!(stdout, SetForegroundColor(Color::Reset));
@@ -787,6 +990,7 @@ fn download_to_local(all_linked_files: &Vec<LinkedFile>, sync_location: &SyncLoc
 						Ok(_) => (),
 						Err(error) =>
 						{
+							report.errors += 1;
 							let _ = queue!(stdout, SetForegroundColor(Color::Red));
 							let _ = queue!(stdout, Print(" (failed!) \n[ERROR] "));
 							let _ = queue!(stdout, SetForegroundColor(Color::Reset));
@@ -798,6 +1002,7 @@ fn download_to_local(all_linked_files: &Vec<LinkedFile>, sync_location: &SyncLoc
 				},
 				Err(error) =>
 				{
+					report.errors += 1;
 					let _ = queue!(stdout, SetForegroundColor(Color::Red));
 					let _ = queue!(stdout, Print(" (failed!) \n[ERROR] "));
 					let _ = queue!(stdout, SetForegroundColor(Color::Reset));
@@ -807,6 +1012,7 @@ fn download_to_local(all_linked_files: &Vec<LinkedFile>, sync_location: &SyncLoc
 				}
 			}
 
+			report.downloaded += 1;
 			{ //Imprimir bonito
 				let _ = queue!(stdout, SetForegroundColor(Color::Green));
 				let _ = queue!(stdout, Print(" (done!)"));
@@ -817,7 +1023,7 @@ fn download_to_local(all_linked_files: &Vec<LinkedFile>, sync_location: &SyncLoc
 	}
 }
 
-fn do_nothing(all_linked_files: &Vec<LinkedFile>)
+fn do_nothing(all_linked_files: &Vec<LinkedFile>, report: &mut Report)
 {
 	let mut stdout = io::stdout();
 
@@ -825,6 +1031,7 @@ fn do_nothing(all_linked_files: &Vec<LinkedFile>)
 	{
 		if linked_file.sync_veredict == SyncVeredict::DoNothing
 		{
+			report.ignored += 1;
 			//Imprimir bonito
 			let _ = queue!(stdout, SetAttribute(Attribute::Bold));
 			let _ = queue!(stdout, SetForegroundColor(Color::Yellow));
@@ -839,6 +1046,7 @@ fn do_nothing(all_linked_files: &Vec<LinkedFile>)
 		}
 		else if linked_file.sync_veredict == SyncVeredict::NotDecidedYet
 		{
+			report.errors += 1;
 			let _ = queue!(stdout, SetAttribute(Attribute::Bold));
 			let _ = queue!(stdout, SetForegroundColor(Color::Red));
 			let _ = queue!(stdout, Print("\n!!"));
