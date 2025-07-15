@@ -82,6 +82,12 @@ enum UserInput
 	Ignore,
 }
 
+enum CurrentMenuInputValue<'a> //Stores the input or selected value of the current screen, if it's a list, stores the index of the selected item, and if it's a textbox it stores the text.
+{
+	List(usize),
+	Text(&'a str),
+}
+
 struct RedrawOptions
 {
 	box_title: String,
@@ -280,7 +286,7 @@ fn logic_add_remote_menu(ui_state: &UiState, new_remote_details: &mut NewRemoteD
 
 					loop
 					{
-						render_add_remote_menu(ui_state, &full_string, 0);
+						render_add_remote_menu(ui_state, &full_string, 0, None);
 						match read_input_raw_mode(true)
 						{
 							UserInput::Char(input_char) =>
@@ -356,7 +362,7 @@ fn logic_add_remote_menu(ui_state: &UiState, new_remote_details: &mut NewRemoteD
 					
 					loop
 					{
-						render_add_remote_menu(ui_state, "", index_selected_option);
+						render_add_remote_menu(ui_state, "", index_selected_option, None);
 						match read_input_raw_mode(false)
 						{
 							UserInput::MoveDown =>
@@ -397,6 +403,41 @@ fn logic_add_remote_menu(ui_state: &UiState, new_remote_details: &mut NewRemoteD
 				},
 				AddRemoteUiStep::Summary =>
 				{
+					let _ = execute!(stdout(), Hide);
+					let mut index_selected_option = 0;
+					
+					loop
+					{
+						render_add_remote_menu(ui_state, "", index_selected_option, Some(&new_remote_details));
+						match read_input_raw_mode(false)
+						{
+							UserInput::MoveDown =>
+							{
+								index_selected_option += 1;
+								if index_selected_option >= 3 //Número total de opciones
+								{
+									index_selected_option = 2;
+								}
+							},
+							UserInput::MoveUp =>
+							{
+								if index_selected_option > 0
+								{
+									index_selected_option -= 1;
+								}
+							},
+							UserInput::Select =>
+							{
+								break;
+							},
+							UserInput::Exit =>
+							{
+								kill_program();
+							},
+							_ => (),
+						}
+					}
+
 					ui_state.clone()
 				}
 			}
@@ -409,7 +450,7 @@ fn logic_add_remote_menu(ui_state: &UiState, new_remote_details: &mut NewRemoteD
 	}
 }
 
-fn render_add_remote_menu(ui_state: &UiState, current_string: &str, selected_option: usize)
+fn render_add_remote_menu(ui_state: &UiState, current_string: &str, selected_option: usize, new_remote_details: Option<&NewRemoteDetails>)
 {
 	let mut stdout = stdout();
 	let _ = queue!(stdout, EnableBlinking);
@@ -673,6 +714,130 @@ fn render_add_remote_menu(ui_state: &UiState, current_string: &str, selected_opt
 					let _ = queue!(stdout, SetBackgroundColor(Color::DarkBlue));
 					let _ = queue!(stdout, SetForegroundColor(Color::White));
 					let _ = queue!(stdout, MoveTo(3 + (prompt.len() as u16) - 1, 5));
+					let _ = stdout.flush();
+				},
+				AddRemoteUiStep::Summary =>
+				{
+					let new_remote_details = match new_remote_details
+					{
+						Some(value) => value,
+						None =>
+						{
+							panic_gracefully("Failed to render summary!");
+							std::process::exit(1);
+						}
+					};
+
+					let name = match &new_remote_details.name
+					{
+						Some(value) => value.as_str(),
+						None => "[None]"
+					};
+					let remote_url = match &new_remote_details.remote_url
+					{
+						Some(value) => value.as_str(),
+						None => "[None]"
+					};
+					let remote_path = match &new_remote_details.remote_path
+					{
+						Some(value) => value.as_str(),
+						None => "[None]"
+					};
+					let local_path = match &new_remote_details.local_path
+					{
+						Some(value) => value.as_str(),
+						None => "[None]"
+					};
+					let remote_username = match &new_remote_details.remote_username
+					{
+						Some(value) => value.as_str(),
+						None => "[None]"
+					};
+					let remote_password = match &new_remote_details.remote_password
+					{
+						Some(value) => 
+						{
+							let mut password_chars = String::with_capacity(value.len());
+							for _ in 0..value.len()
+							{
+								password_chars.push('*');
+							}
+							password_chars
+						}
+						None => String::from("[None]")
+					};
+
+					let selectable_options: Vec<String> = vec!
+					[
+						String::from("Save basic settings"),
+						String::from("Advanced settings"),
+						String::from("Discard and exit"),
+					];
+
+					redraw
+					(
+						&RedrawOptions
+						{
+							box_title: String::from(" Add a remote "),
+							selectable_options: Some(selectable_options),
+							draw_options_at_coordinates: (12, 0),
+							selected_option: selected_option,
+						}
+					);
+
+					let _ = queue!(stdout, MoveTo(3, 2));
+					let _ = queue!(stdout, SetAttribute(Attribute::Bold));
+					let _ = queue!(stdout, Print("Basic settings are done!"));
+					let _ = queue!(stdout, SetAttribute(Attribute::Reset));
+					let _ = queue!(stdout, SetBackgroundColor(Color::DarkBlue));
+					let _ = queue!(stdout, SetForegroundColor(Color::White));
+					let _ = queue!(stdout, MoveTo(4, 3));
+					let _ = queue!(stdout, Print("Are these settings ok?"));
+					let _ = queue!(stdout, MoveTo(4, 5));
+					let _ = queue!(stdout, SetAttribute(Attribute::Bold));
+					let _ = queue!(stdout, Print("Name: "));
+					let _ = queue!(stdout, SetAttribute(Attribute::Reset));
+					let _ = queue!(stdout, SetBackgroundColor(Color::DarkBlue));
+					let _ = queue!(stdout, SetForegroundColor(Color::White));
+					let _ = queue!(stdout, Print(name));
+					let _ = queue!(stdout, MoveTo(4, 6));
+					let _ = queue!(stdout, SetAttribute(Attribute::Bold));
+					let _ = queue!(stdout, Print("Remote: "));
+					let _ = queue!(stdout, SetAttribute(Attribute::Reset));
+					let _ = queue!(stdout, SetBackgroundColor(Color::DarkBlue));
+					let _ = queue!(stdout, SetForegroundColor(Color::White));
+					let _ = queue!(stdout, Print(remote_url));
+					let _ = queue!(stdout, MoveTo(4, 7));
+					let _ = queue!(stdout, SetAttribute(Attribute::Bold));
+					let _ = queue!(stdout, Print("Remote path: "));
+					let _ = queue!(stdout, SetAttribute(Attribute::Reset));
+					let _ = queue!(stdout, SetBackgroundColor(Color::DarkBlue));
+					let _ = queue!(stdout, SetForegroundColor(Color::White));
+					let _ = queue!(stdout, Print(remote_path));
+					let _ = queue!(stdout, MoveTo(4, 8));
+					let _ = queue!(stdout, SetAttribute(Attribute::Bold));
+					let _ = queue!(stdout, Print("Local path: "));
+					let _ = queue!(stdout, SetAttribute(Attribute::Reset));
+					let _ = queue!(stdout, SetBackgroundColor(Color::DarkBlue));
+					let _ = queue!(stdout, SetForegroundColor(Color::White));
+					let _ = queue!(stdout, Print(local_path));
+					let _ = queue!(stdout, MoveTo(4, 9));
+					let _ = queue!(stdout, SetAttribute(Attribute::Bold));
+					let _ = queue!(stdout, Print("Username: "));
+					let _ = queue!(stdout, SetAttribute(Attribute::Reset));
+					let _ = queue!(stdout, SetBackgroundColor(Color::DarkBlue));
+					let _ = queue!(stdout, SetForegroundColor(Color::White));
+					let _ = queue!(stdout, Print(remote_username));
+					let _ = queue!(stdout, MoveTo(4, 10));
+					let _ = queue!(stdout, SetAttribute(Attribute::Bold));
+					let _ = queue!(stdout, Print("Password: "));
+					let _ = queue!(stdout, SetAttribute(Attribute::Reset));
+					let _ = queue!(stdout, SetBackgroundColor(Color::DarkBlue));
+					let _ = queue!(stdout, SetForegroundColor(Color::White));
+					let _ = queue!(stdout, Print(remote_password.as_str()));
+					let _ = queue!(stdout, MoveTo(4, 12));
+					let _ = queue!(stdout, Print("Save these settings or continue to more advanced configurations?"));
+					let _ = queue!(stdout, MoveTo(4, 14));
 					let _ = stdout.flush();
 				},
 				_ =>
