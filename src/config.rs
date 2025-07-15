@@ -1,6 +1,7 @@
 use std::fs;
+use serde_derive::Serialize;
 
-#[derive(Clone)]
+#[derive(Clone, Serialize)]
 pub struct SyncLocation
 {
 	pub remote: String,
@@ -16,7 +17,7 @@ fn get_config_location() -> String
 	String::from("config.json")
 }
 
-pub fn read_config() -> Option<Vec<SyncLocation>>
+fn read_config_file_as_json() -> Option<serde_json::Value>
 {
 	let config_file = match fs::read_to_string(get_config_location())
 	{
@@ -44,6 +45,17 @@ pub fn read_config() -> Option<Vec<SyncLocation>>
 			println!("[ERROR] Failed to parse config as json, {}", error);
 			return None;
 		}
+	};
+
+	Some(json)
+}
+
+pub fn get_config() -> Option<Vec<SyncLocation>>
+{
+	let json = match read_config_file_as_json()
+	{
+		Some(value) => value,
+		None => return None,
 	};
 
 	let root = match json.as_array()
@@ -221,4 +233,61 @@ fn save_default_config() -> Option<String>
 		}
 	}
 	Some(String::from(default_config_contents)) //Devolver un vector vacío porque no hay ningún remote por defecto.
+}
+
+pub fn add_new_remote(remote: &SyncLocation) -> bool
+{
+	let mut config = match read_config_file_as_json()
+	{
+		Some(value) => value,
+		None =>
+		{
+			println!("[ERROR] Failed to save new remote!");
+			return false;
+		}
+	};
+
+	let root = match config.as_array_mut()
+	{
+		Some(value) => value,
+		None =>
+		{
+			println!("[ERROR] current config is not an array somehow!");
+			return false;
+		}
+	};
+
+	let new_remote = match serde_json::to_value(remote)
+	{
+		Ok(value) => value,
+		Err(error) =>
+		{
+			println!("[ERROR] Failed to serialize remote to json! ({error})");
+			return false;
+		}
+	};
+
+	root.push(new_remote);
+
+	let new_root_json = match serde_json::to_value(root)
+	{
+		Ok(value) => value,
+		Err(error) =>
+		{
+			println!("[ERROR] Failed to serialize root array back to json! ({error})");
+			return false;
+		}
+	};
+
+	let json_string = new_root_json.to_string();
+
+	match fs::write(get_config_location(), json_string)
+	{
+		Ok(_) => true,
+		Err(error) =>
+		{
+			println!("[ERROR] Failed to write config file! ({error})");
+			false
+		}
+	}
 }

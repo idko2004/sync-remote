@@ -92,12 +92,12 @@ struct RedrawOptions
 #[derive(Clone)]
 pub struct NewRemoteDetails
 {
-	name: Option<String>,
-	remote_url: Option<String>,
-	remote_path: Option<String>,
-	local_path: Option<String>,
-	remote_username: Option<String>,
-	remote_password: Option<String>,
+	pub name: Option<String>,
+	pub remote_url: Option<String>,
+	pub remote_path: Option<String>,
+	pub local_path: Option<String>,
+	pub remote_username: Option<String>,
+	pub remote_password: Option<String>,
 }
 
 impl NewRemoteDetails

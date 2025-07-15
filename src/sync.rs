@@ -1037,7 +1037,7 @@ fn do_nothing(all_linked_files: &Vec<LinkedFile>, report: &mut Report)
 			let _ = queue!(stdout, SetForegroundColor(Color::Yellow));
 			let _ = queue!(stdout, Print("\n--"));
 			let _ = queue!(stdout, SetForegroundColor(Color::Reset));
-			let _ = queue!(stdout, Print("\n Ignoring: "));
+			let _ = queue!(stdout, Print(" Ignoring: "));
 			let _ = queue!(stdout, SetAttribute(Attribute::Reset));
 			let _ = queue!(stdout, Print(format!("{}", linked_file.relative_path)));
 			let _ = queue!(stdout, SetForegroundColor(Color::Green));
@@ -1051,7 +1051,7 @@ fn do_nothing(all_linked_files: &Vec<LinkedFile>, report: &mut Report)
 			let _ = queue!(stdout, SetForegroundColor(Color::Red));
 			let _ = queue!(stdout, Print("\n!!"));
 			let _ = queue!(stdout, SetForegroundColor(Color::Reset));
-			let _ = queue!(stdout, Print("\n FAILED TO DETERMINE WHAT TO DO WITH THIS, WILL BE IGNORED: "));
+			let _ = queue!(stdout, Print(" FAILED TO DETERMINE WHAT TO DO WITH THIS, WILL BE IGNORED: "));
 			let _ = queue!(stdout, SetAttribute(Attribute::Reset));
 			let _ = queue!(stdout, Print(format!("{}", linked_file.relative_path)));
 		}
