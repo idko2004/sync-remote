@@ -1,9 +1,8 @@
-use crate::sync::start_sync_blocking;
-
 mod sync;
 mod config;
 mod tui;
 
+use crate::tui::TuiResult;
 
 fn main()
 {
@@ -20,28 +19,33 @@ fn main()
 	}
 	remote_names.push(String::from("(Add new remote)"));
 
-	let selected = match tui::start_tui_blocking(&remote_names)
+	match tui::start_tui_blocking(&remote_names)
 	{
-		Some(value) => value,
-		None => return,
-	};
-
-	if selected == remote_names.len() - 1
-	{
-		println!("TODO: Add new remote ui");
-		return;
-	}
-
-	let selected_sync_location = match sync_locations.get(selected)
-	{
-		Some(value) => value,
-		None =>
+		TuiResult::SyncRemote(remote_selected) =>
 		{
-			println!("[ERROR] Failed to get access to the sync location at the index {selected}");
-			return;
+			if remote_selected == remote_names.len() - 1
+			{
+				println!("TODO: Add new remote ui");
+				return;
+			}
+
+			let selected_sync_location = match sync_locations.get(remote_selected)
+			{
+				Some(value) => value,
+				None =>
+				{
+					println!("[ERROR] Failed to get access to the sync location at the index {remote_selected}");
+					return;
+				}
+			};
+
+			sync::start_sync_blocking(selected_sync_location);
+		},
+		TuiResult::CreateRemote(new_remote_details) =>
+		{
+			println!("todo! actually create the remote")
 		}
 	};
 
-	start_sync_blocking(selected_sync_location);
 
 }

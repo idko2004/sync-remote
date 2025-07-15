@@ -5,8 +5,6 @@ use std::
 		stdout,
 		Stdout,
 		Write,
-		stdin,
-		Stdin,
 	}
 };
 use crossterm::
@@ -17,7 +15,6 @@ use crossterm::
 		Hide,
 		Show,
 		EnableBlinking,
-		DisableBlinking,
 	},
 	event::
 	{
@@ -50,16 +47,18 @@ use crossterm::
 	}
 };
 
-#[derive(Clone, Copy)]
-enum UiState
+#[derive(Clone)]
+enum TuiState
 {
 	MainMenu(usize), //usize saves the current remote selected
-	AddRemote(AddRemoteUiStep), //AddRemoteUiStep saves the current step of the process.
+	AddRemote(AddRemoteTuiStep), //AddRemoteUiStep saves the current step of the process.
+
 	RemoteSelected(usize), //This returns the usize to main and exits the ui loop.
+	AddRemoteDone,
 }
 
 #[derive(Clone, Copy, PartialEq)]
-enum AddRemoteUiStep
+enum AddRemoteTuiStep
 {
 	SettingName,
 	SettingRemoteUrl,
@@ -82,12 +81,6 @@ enum UserInput
 	Ignore,
 }
 
-enum CurrentMenuInputValue<'a> //Stores the input or selected value of the current screen, if it's a list, stores the index of the selected item, and if it's a textbox it stores the text.
-{
-	List(usize),
-	Text(&'a str),
-}
-
 struct RedrawOptions
 {
 	box_title: String,
@@ -96,7 +89,8 @@ struct RedrawOptions
 	selected_option: usize,
 }
 
-struct NewRemoteDetails
+#[derive(Clone)]
+pub struct NewRemoteDetails
 {
 	name: Option<String>,
 	remote_url: Option<String>,
@@ -122,14 +116,19 @@ impl NewRemoteDetails
 	}
 }
 
-pub fn start_tui_blocking(selectable_options: &Vec<String>) -> Option<usize>
+pub enum TuiResult
+{
+	SyncRemote(usize),
+	CreateRemote(NewRemoteDetails),
+}
+
+pub fn start_tui_blocking(selectable_options: &Vec<String>) -> TuiResult
 {
 	let _ = execute!(stdout(), EnterAlternateScreen);
 	let _ = execute!(stdout(), Hide);
 
-	let mut ui_state = UiState::MainMenu(0);
+	let mut ui_state = TuiState::MainMenu(0);
 	let mut new_remote_details = NewRemoteDetails::new(); //This is only to keep track of UiState::AddRemote state.
-	let index_selected_option;
 
 	//render_main_menu(&ui_state, selectable_options);
 	
@@ -137,38 +136,33 @@ pub fn start_tui_blocking(selectable_options: &Vec<String>) -> Option<usize>
 	{
 		match ui_state
 		{
-			UiState::MainMenu(_) =>
+			TuiState::MainMenu(_) =>
 			{
 				render_main_menu(&ui_state, selectable_options);
 				ui_state = logic_main_menu(&mut ui_state, selectable_options);
 			},
-			UiState::AddRemote(_) =>
+			TuiState::RemoteSelected(value) =>
+			{
+				reset_terminal();
+				return TuiResult::SyncRemote(value);
+			},
+			TuiState::AddRemote(_) =>
 			{
 				//render_add_remote_menu(&ui_state); //this should be called by logic_add_remote only once per screen
 				ui_state = logic_add_remote_menu(&mut ui_state, &mut new_remote_details);
 			},
-			UiState::RemoteSelected(value) =>
+			TuiState::AddRemoteDone =>
 			{
-				index_selected_option = value;
-				break;
+				reset_terminal();
+				return TuiResult::CreateRemote(new_remote_details);
 			}
 		}
 
 		std::thread::sleep(std::time::Duration::from_millis(50));
 	}
-
-	let _ = execute!(stdout(), SetBackgroundColor(Color::Reset));
-	let _ = execute!(stdout(), SetForegroundColor(Color::Reset));
-	let _ = execute!(stdout(), Clear(ClearType::All));
-	let _ = execute!(stdout(), Clear(ClearType::Purge));
-	let _ = execute!(stdout(), Show);
-	let _ = execute!(stdout(), LeaveAlternateScreen);
-	let _ = disable_raw_mode();
-	
-	Some(index_selected_option)
 }
 
-fn logic_main_menu(ui_state: &UiState, selectable_options: &Vec<String>) -> UiState
+fn logic_main_menu(ui_state: &TuiState, selectable_options: &Vec<String>) -> TuiState
 {
 	match is_raw_mode_enabled()
 	{
@@ -196,7 +190,7 @@ fn logic_main_menu(ui_state: &UiState, selectable_options: &Vec<String>) -> UiSt
 
 	let mut index_selected_option = match ui_state
 	{
-		UiState::MainMenu(value) => value.clone(),
+		TuiState::MainMenu(value) => value.clone(),
 		_ =>
 		{
 			panic_gracefully("[ERROR] logic_main_menu should not be called if current menu is not MainMenu!!");
@@ -225,11 +219,11 @@ fn logic_main_menu(ui_state: &UiState, selectable_options: &Vec<String>) -> UiSt
 		{
 			if index_selected_option == selectable_options.len() - 1 //"(Add remote)" siempre es la última opción
 			{
-				return UiState::AddRemote(AddRemoteUiStep::SettingName);
+				return TuiState::AddRemote(AddRemoteTuiStep::SettingName);
 			}
 			else
 			{
-				return UiState::RemoteSelected(index_selected_option);
+				return TuiState::RemoteSelected(index_selected_option);
 			}
 		},
 		UserInput::Exit =>
@@ -239,14 +233,14 @@ fn logic_main_menu(ui_state: &UiState, selectable_options: &Vec<String>) -> UiSt
 		_ => (),
 	}
 
-	UiState::MainMenu(index_selected_option)
+	TuiState::MainMenu(index_selected_option)
 }
 
-fn render_main_menu(ui_state: &UiState, selectable_options: &Vec<String>)
+fn render_main_menu(ui_state: &TuiState, selectable_options: &Vec<String>)
 {
 	let selected_option = match ui_state
 	{
-		UiState::MainMenu(value) => value.clone(),
+		TuiState::MainMenu(value) => value.clone(),
 		_ =>
 		{
 			panic_gracefully("[ERROR] render_main_menu should not be called if current menu is not MainMenu!!");
@@ -265,21 +259,21 @@ fn render_main_menu(ui_state: &UiState, selectable_options: &Vec<String>)
 	redraw(&redraw_options);
 }
 
-fn logic_add_remote_menu(ui_state: &UiState, new_remote_details: &mut NewRemoteDetails) -> UiState
+fn logic_add_remote_menu(ui_state: &TuiState, new_remote_details: &mut NewRemoteDetails) -> TuiState
 {
 	match ui_state
 	{
-		UiState::AddRemote(step) =>
+		TuiState::AddRemote(step) =>
 		{
 			match step
 			{
 				//Agrupar pantallas con comportamiento similiar
-				AddRemoteUiStep::SettingName |
-				AddRemoteUiStep::SettingRemoteUrl |
-				AddRemoteUiStep::SettingRemotePath |
-				AddRemoteUiStep::SettingLocalPath |
-				AddRemoteUiStep::SettingRemoteUsername |
-				AddRemoteUiStep::SettingRemotePassword =>
+				AddRemoteTuiStep::SettingName |
+				AddRemoteTuiStep::SettingRemoteUrl |
+				AddRemoteTuiStep::SettingRemotePath |
+				AddRemoteTuiStep::SettingLocalPath |
+				AddRemoteTuiStep::SettingRemoteUsername |
+				AddRemoteTuiStep::SettingRemotePassword =>
 				{
 					let _ = execute!(stdout(), Show);
 					let mut full_string = String::new();
@@ -305,7 +299,7 @@ fn logic_add_remote_menu(ui_state: &UiState, new_remote_details: &mut NewRemoteD
 									break;
 								}
 								//If setting a remote path, input can be empty because there's a "/" visible in the ui, this also means that a / should be added to the start of the string when saving.
-								if *step == AddRemoteUiStep::SettingRemotePath
+								if *step == AddRemoteTuiStep::SettingRemotePath
 								{
 									break;
 								}
@@ -322,40 +316,40 @@ fn logic_add_remote_menu(ui_state: &UiState, new_remote_details: &mut NewRemoteD
 					//Comportamiento que varía en pantallas parecidas.
 					match step
 					{
-						AddRemoteUiStep::SettingName =>
+						AddRemoteTuiStep::SettingName =>
 						{
 							new_remote_details.name = Some(full_string);
-							UiState::AddRemote(AddRemoteUiStep::SettingRemoteUrl)
+							TuiState::AddRemote(AddRemoteTuiStep::SettingRemoteUrl)
 						},
-						AddRemoteUiStep::SettingRemoteUrl =>
+						AddRemoteTuiStep::SettingRemoteUrl =>
 						{
 							new_remote_details.remote_url = Some(full_string);
-							UiState::AddRemote(AddRemoteUiStep::SettingRemotePath)
+							TuiState::AddRemote(AddRemoteTuiStep::SettingRemotePath)
 						},
-						AddRemoteUiStep::SettingRemotePath =>
+						AddRemoteTuiStep::SettingRemotePath =>
 						{
 							new_remote_details.remote_path = Some(full_string);
-							UiState::AddRemote(AddRemoteUiStep::SettingLocalPath)
+							TuiState::AddRemote(AddRemoteTuiStep::SettingLocalPath)
 						},
-						AddRemoteUiStep::SettingLocalPath =>
+						AddRemoteTuiStep::SettingLocalPath =>
 						{
 							new_remote_details.local_path = Some(full_string);
-							UiState::AddRemote(AddRemoteUiStep::AskingIfNeedsLogin)
+							TuiState::AddRemote(AddRemoteTuiStep::AskingIfNeedsLogin)
 						},
-						AddRemoteUiStep::SettingRemoteUsername =>
+						AddRemoteTuiStep::SettingRemoteUsername =>
 						{
 							new_remote_details.remote_username = Some(full_string);
-							UiState::AddRemote(AddRemoteUiStep::SettingRemotePassword)
+							TuiState::AddRemote(AddRemoteTuiStep::SettingRemotePassword)
 						},
-						AddRemoteUiStep::SettingRemotePassword =>
+						AddRemoteTuiStep::SettingRemotePassword =>
 						{
 							new_remote_details.remote_password = Some(full_string);
-							UiState::AddRemote(AddRemoteUiStep::Summary)
+							TuiState::AddRemote(AddRemoteTuiStep::Summary)
 						},
 						_ => ui_state.clone()
 					}
 				},
-				AddRemoteUiStep::AskingIfNeedsLogin =>
+				AddRemoteTuiStep::AskingIfNeedsLogin =>
 				{
 					let _ = execute!(stdout(), Hide);
 					let mut index_selected_option = 0;
@@ -394,14 +388,14 @@ fn logic_add_remote_menu(ui_state: &UiState, new_remote_details: &mut NewRemoteD
 
 					if index_selected_option == 0
 					{
-						UiState::AddRemote(AddRemoteUiStep::SettingRemoteUsername)
+						TuiState::AddRemote(AddRemoteTuiStep::SettingRemoteUsername)
 					}
 					else
 					{
-						UiState::AddRemote(AddRemoteUiStep::Summary)
+						TuiState::AddRemote(AddRemoteTuiStep::Summary)
 					}
 				},
-				AddRemoteUiStep::Summary =>
+				AddRemoteTuiStep::Summary =>
 				{
 					let _ = execute!(stdout(), Hide);
 					let mut index_selected_option = 0;
@@ -438,7 +432,25 @@ fn logic_add_remote_menu(ui_state: &UiState, new_remote_details: &mut NewRemoteD
 						}
 					}
 
-					ui_state.clone()
+					match index_selected_option
+					{
+						0 => TuiState::AddRemoteDone,
+						1 =>
+						{
+							panic_gracefully("todo! advanced settings");
+							std::process::exit(1);
+						},
+						2 =>
+						{
+							kill_program();
+							ui_state.clone()
+						},
+						_ =>
+						{
+							panic_gracefully("[ERROR] Invalid item selected on list");
+							std::process::exit(1);
+						}
+					}
 				}
 			}
 		},
@@ -450,18 +462,18 @@ fn logic_add_remote_menu(ui_state: &UiState, new_remote_details: &mut NewRemoteD
 	}
 }
 
-fn render_add_remote_menu(ui_state: &UiState, current_string: &str, selected_option: usize, new_remote_details: Option<&NewRemoteDetails>)
+fn render_add_remote_menu(ui_state: &TuiState, current_string: &str, selected_option: usize, new_remote_details: Option<&NewRemoteDetails>)
 {
 	let mut stdout = stdout();
 	let _ = queue!(stdout, EnableBlinking);
 
 	match ui_state
 	{
-		UiState::AddRemote(step) =>
+		TuiState::AddRemote(step) =>
 		{
 			match step
 			{
-				AddRemoteUiStep::SettingName =>
+				AddRemoteTuiStep::SettingName =>
 				{
 					redraw
 					(
@@ -493,7 +505,7 @@ fn render_add_remote_menu(ui_state: &UiState, current_string: &str, selected_opt
 					let _ = queue!(stdout, MoveTo(3 + (prompt.len() as u16) - 1, 5));
 					let _ = stdout.flush();
 				},
-				AddRemoteUiStep::SettingRemoteUrl =>
+				AddRemoteTuiStep::SettingRemoteUrl =>
 				{
 					redraw
 					(
@@ -539,7 +551,7 @@ fn render_add_remote_menu(ui_state: &UiState, current_string: &str, selected_opt
 					let _ = queue!(stdout, MoveTo(3 + (prompt.len() as u16) - 1, 6));
 					let _ = stdout.flush();
 				},
-				AddRemoteUiStep::SettingRemotePath =>
+				AddRemoteTuiStep::SettingRemotePath =>
 				{
 					redraw
 					(
@@ -579,7 +591,7 @@ fn render_add_remote_menu(ui_state: &UiState, current_string: &str, selected_opt
 					let _ = queue!(stdout, MoveTo(3 + (prompt.len() as u16) - 1, 6));
 					let _ = stdout.flush();
 				},
-				AddRemoteUiStep::SettingLocalPath =>
+				AddRemoteTuiStep::SettingLocalPath =>
 				{
 					redraw
 					(
@@ -625,7 +637,7 @@ fn render_add_remote_menu(ui_state: &UiState, current_string: &str, selected_opt
 					let _ = queue!(stdout, MoveTo(3 + (prompt.len() as u16) - 1, 6));
 					let _ = stdout.flush();
 				},
-				AddRemoteUiStep::AskingIfNeedsLogin =>
+				AddRemoteTuiStep::AskingIfNeedsLogin =>
 				{
 					let selectable_options: Vec<String> = vec!
 					[
@@ -652,7 +664,7 @@ fn render_add_remote_menu(ui_state: &UiState, current_string: &str, selected_opt
 					let _ = queue!(stdout, SetForegroundColor(Color::White));
 					let _ = stdout.flush();
 				},
-				AddRemoteUiStep::SettingRemoteUsername =>
+				AddRemoteTuiStep::SettingRemoteUsername =>
 				{
 					redraw
 					(
@@ -679,7 +691,7 @@ fn render_add_remote_menu(ui_state: &UiState, current_string: &str, selected_opt
 					let _ = queue!(stdout, MoveTo(3 + (prompt.len() as u16) - 1, 4));
 					let _ = stdout.flush();
 				},
-				AddRemoteUiStep::SettingRemotePassword =>
+				AddRemoteTuiStep::SettingRemotePassword =>
 				{
 					redraw
 					(
@@ -716,7 +728,7 @@ fn render_add_remote_menu(ui_state: &UiState, current_string: &str, selected_opt
 					let _ = queue!(stdout, MoveTo(3 + (prompt.len() as u16) - 1, 5));
 					let _ = stdout.flush();
 				},
-				AddRemoteUiStep::Summary =>
+				AddRemoteTuiStep::Summary =>
 				{
 					let new_remote_details = match new_remote_details
 					{
@@ -840,11 +852,13 @@ fn render_add_remote_menu(ui_state: &UiState, current_string: &str, selected_opt
 					let _ = queue!(stdout, MoveTo(4, 14));
 					let _ = stdout.flush();
 				},
+				/*
 				_ =>
 				{
 					panic_gracefully("[ERROR] idk how to render this");
 					std::process::exit(1);
 				}
+				*/
 			}
 		},
 		_ =>
@@ -1050,27 +1064,28 @@ fn read_input_raw_mode(return_chars: bool) -> UserInput
 	process_input_raw_mode(&input, return_chars)
 }
 
+fn reset_terminal()
+{
+	let mut stdout = stdout();
+	let _ = queue!(stdout, SetBackgroundColor(Color::Reset));
+	let _ = queue!(stdout, SetForegroundColor(Color::Reset));
+	let _ = queue!(stdout, Clear(ClearType::All));
+	let _ = queue!(stdout, Clear(ClearType::Purge));
+	let _ = queue!(stdout, Show);
+	let _ = queue!(stdout, LeaveAlternateScreen);
+	let _ = stdout.flush();
+	let _ = disable_raw_mode();
+}
+
 fn kill_program()
 {
-	let _ = execute!(stdout(), SetBackgroundColor(Color::Reset));
-	let _ = execute!(stdout(), SetForegroundColor(Color::Reset));
-	let _ = execute!(stdout(), Clear(ClearType::All));
-	let _ = execute!(stdout(), Clear(ClearType::Purge));
-	let _ = execute!(stdout(), Show);
-	let _ = execute!(stdout(), LeaveAlternateScreen);
-	let _ = disable_raw_mode();
+	reset_terminal();
 	let _ = execute!(stdout(), Print("\nGoodbye!\n"));
 	std::process::exit(0);
 }
 
 fn panic_gracefully(message: &str)
 {
-	let _ = execute!(stdout(), SetBackgroundColor(Color::Reset));
-	let _ = execute!(stdout(), SetForegroundColor(Color::Reset));
-	let _ = execute!(stdout(), Clear(ClearType::All));
-	let _ = execute!(stdout(), Clear(ClearType::Purge));
-	let _ = execute!(stdout(), Show);
-	let _ = execute!(stdout(), LeaveAlternateScreen);
-	let _ = disable_raw_mode();
+	reset_terminal();
 	panic!("{}", message);
 }
