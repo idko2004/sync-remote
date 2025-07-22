@@ -3,7 +3,7 @@ use chrono::{DateTime, Timelike, Utc};
 use suppaftp::{FtpStream, list};
 use crossterm::{queue, style::{Color, Print, SetForegroundColor, SetAttribute, Attribute}};
 
-use crate::config::SyncLocation;
+use crate::config::{SyncLocation, get_program_folder};
 
 #[derive(Clone, Debug)]
 struct File
@@ -151,6 +151,7 @@ pub fn start_sync_blocking(sync_location: &SyncLocation)
 		}
 	}
 
+
 	{ //Listing remote files message
 		let _ = queue!(stdout, SetAttribute(Attribute::Bold));
 		let _ = queue!(stdout, SetForegroundColor(Color::Yellow));
@@ -163,6 +164,7 @@ pub fn start_sync_blocking(sync_location: &SyncLocation)
 
 	let all_remote_files = get_all_remote_files_recursive_from(&sync_location.remote_path, &mut ftp_stream);
 
+
 	{ //Listing local files message
 		let _ = queue!(stdout, SetAttribute(Attribute::Bold));
 		let _ = queue!(stdout, SetForegroundColor(Color::Yellow));
@@ -174,6 +176,47 @@ pub fn start_sync_blocking(sync_location: &SyncLocation)
 	}
 
 	let all_local_files = get_all_local_files_recursive_from(&sync_location.local_path);
+
+
+	if sync_location.advance_backups
+	{
+		{ //Making a backup message
+			let _ = queue!(stdout, SetAttribute(Attribute::Bold));
+			let _ = queue!(stdout, SetForegroundColor(Color::Yellow));
+			let _ = queue!(stdout, Print("*"));
+			let _ = queue!(stdout, SetForegroundColor(Color::Reset));
+			let _ = queue!(stdout, Print(" Making a backup...\n"));
+			let _ = queue!(stdout, SetAttribute(Attribute::Reset));
+			let _ = stdout.flush();
+		}
+
+		match make_local_backup(&all_local_files, sync_location)
+		{
+			true => (),
+			false =>
+			{
+				let _ = queue!(stdout, SetAttribute(Attribute::Bold));
+				let _ = queue!(stdout, SetForegroundColor(Color::Red));
+				let _ = queue!(stdout, Print("\n[ERROR] "));
+				let _ = queue!(stdout, SetAttribute(Attribute::Reset));
+				let _ = queue!(stdout, SetForegroundColor(Color::Reset));
+				let _ = queue!(stdout, Print(format!("Backup failed! Aboring...\n")));
+				let _ = stdout.flush();
+				return;
+			}
+		}
+	}
+	else
+	{ //not Making a backup message
+		let _ = queue!(stdout, SetAttribute(Attribute::Bold));
+		let _ = queue!(stdout, SetForegroundColor(Color::Grey));
+		let _ = queue!(stdout, Print("*"));
+		let _ = queue!(stdout, SetForegroundColor(Color::Reset));
+		let _ = queue!(stdout, Print(" Not making a backup...\n"));
+		let _ = queue!(stdout, SetAttribute(Attribute::Reset));
+		let _ = stdout.flush();
+	}
+
 
 	{ //Thinking how to sync message
 		let _ = queue!(stdout, SetAttribute(Attribute::Bold));
@@ -200,41 +243,6 @@ pub fn start_sync_blocking(sync_location: &SyncLocation)
 	}
 
 	sync_files(&all_files_linked, sync_location, &mut ftp_stream);
-
-	/*
-	for a in all_files_linked
-	{
-		println!("{:?}", a);
-	}
-	*/
-/*
-	println!("\n\nAll linked files:");
-	for file in &all_files_linked
-	{
-		if file.local_file.is_some() && file.remote_file.is_some()
-		{
-			println!("{:?}\n{}\nremote:\t{}\nlocal:\t{}\n",file.sync_veredict, file.relative_path, file.remote_file.clone().unwrap().date_modified, file.local_file.clone().unwrap().date_modified);
-		}
-	}
-
-	println!("\n\nFiles only on remote:");
-	for file in &all_files_linked
-	{
-		if file.local_file.is_none() && file.remote_file.is_some()
-		{
-			println!("{:?}\n{}\nremote:\t{}\nlocal:\t{}\n",file.sync_veredict,file.relative_path, file.remote_file.clone().unwrap().date_modified, "(None)");
-		}
-	}
-
-	println!("\n\nFiles only on local:");
-	for file in &all_files_linked
-	{
-		if file.local_file.is_some() && file.remote_file.is_none()
-		{
-			println!("{:?}\n{}\nremote:\t{}\nlocal:\t{}\n",file.sync_veredict,file.relative_path, "(None)", file.local_file.clone().unwrap().date_modified);
-		}
-	}
-*/
 }
 
 fn get_all_remote_files_recursive_from(directory: &String, ftp_stream: &mut FtpStream) -> Vec<File>
@@ -579,6 +587,48 @@ fn list_local_directory(directory: &String) -> Option<fs::ReadDir>
 		Ok(value) => Some(value),
 		Err(_) => None,
 	}
+}
+
+fn make_local_backup(all_local_files: &Vec<File>, sync_location: &SyncLocation) -> bool
+{
+	let mut stdout = io::stdout();
+	{ //Imprimir bonito
+		let _ = queue!(stdout, SetAttribute(Attribute::Bold));
+		let _ = queue!(stdout, SetForegroundColor(Color::Green));
+		let _ = queue!(stdout, Print("\n~~"));
+		let _ = queue!(stdout, SetForegroundColor(Color::Reset));
+		let _ = queue!(stdout, Print(" Preparing backup folder..."));
+		let _ = queue!(stdout, SetAttribute(Attribute::Reset));
+		let _ = stdout.flush();
+	}
+
+	let backup_folder = format!("{}/backups/{}", get_program_folder(), sync_location.name_encoded);
+
+	match fs::exists(&backup_folder)
+	{
+		Ok(exits) =>
+		{
+
+		},
+		Err(error) =>
+		{
+			let _ = queue!(stdout, SetForegroundColor(Color::Red));
+			let _ = queue!(stdout, Print(" (failed!) \n[ERROR] "));
+			let _ = queue!(stdout, SetForegroundColor(Color::Reset));
+			let _ = queue!(stdout, Print(format!("Failed to comprobe the existence of the backup folder ({}), {}", &backup_folder, error)));
+			let _ = stdout.flush();
+		}
+	}
+
+	if fs::exists(&backup_folder)
+	{
+		fs::remove_dir_all(&backup_folder)
+		{
+
+		}	
+	}
+
+	true
 }
 
 fn link_all_files(all_remote_files: &Vec<File>, all_local_files: &Vec<File>, sync_location: &SyncLocation) -> Vec<LinkedFile>

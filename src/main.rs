@@ -7,6 +7,7 @@ use crate::config::SyncLocation;
 
 use crossterm::{queue, style::{Color, Print, SetForegroundColor, SetAttribute, Attribute}};
 use std::io::Write;
+use html_escape::encode_unquoted_attribute_to_string;
 
 fn main()
 {
@@ -97,11 +98,13 @@ fn main()
 			let sync_location = SyncLocation
 			{
 				name: name.clone(),
+				name_encoded: encodify_name(&name),
 				remote: remote,
 				remote_path: remote_path,
 				local_path: local_path,
 				remote_username: remote_username,
 				remote_password: remote_password,
+				advance_backups: true, //TODO: Cambiar este valor desde TUI
 			};
 
 			match config::add_new_remote(&sync_location)
@@ -131,4 +134,11 @@ fn main()
 	};
 
 
+}
+
+fn encodify_name(name: &String) -> String
+{
+	let mut result = String::new();
+	let _ = encode_unquoted_attribute_to_string(name, &mut result);
+	result.replace(" ", "_")
 }

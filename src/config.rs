@@ -6,15 +6,22 @@ pub struct SyncLocation
 {
 	pub remote: String,
 	pub name: String,
+	pub name_encoded: String,
 	pub remote_path: String,
 	pub local_path: String,
 	pub remote_username: String,
 	pub remote_password: String,
+	pub advance_backups: bool,
+}
+
+pub fn get_program_folder() -> String
+{
+	String::from("~/.local/share/idko2004.github.io/sync-remote")
 }
 
 fn get_config_location() -> String
 {
-	String::from("config.json")
+	format!("{}/config.json", get_program_folder())
 }
 
 fn read_config_file_as_json() -> Option<serde_json::Value>
@@ -116,6 +123,26 @@ pub fn get_config() -> Option<Vec<SyncLocation>>
 						continue;
 					}
 				};
+				let name_encoded = match obj.get("name_encoded")
+				{
+					Some(value) =>
+					{
+						match value.as_str()
+						{
+							Some(value) => value,
+							None =>
+							{
+								println!("[ERROR] Some elements of the config file are invalid - name_encoded should be a string!");
+								continue;
+							}
+						}
+					},
+					None =>
+					{
+						println!("[ERROR] Some elements of the config file are invalid! - Failed to obtain name_encoded");
+						continue;
+					}
+				};
 				let remote_path = match obj.get("remote_path")
 				{
 					Some(value) =>
@@ -196,6 +223,26 @@ pub fn get_config() -> Option<Vec<SyncLocation>>
 						continue;
 					}
 				};
+				let advance_backups = match obj.get("advance_backups")
+				{
+					Some(value) =>
+					{
+						match value.as_bool()
+						{
+							Some(value) => value,
+							None =>
+							{
+								println!("[ERROR] Some elements of teh config file are invalid! - advance_backups should be a boolean!");
+								continue;
+							}
+						}
+					},
+					None =>
+					{
+						println!("[ERROR] Some elements of the config file are invalid! - Failed to obtain advance_backups value");
+						continue;
+					}
+				};
 
 				sync_locations.push
 				(
@@ -203,10 +250,12 @@ pub fn get_config() -> Option<Vec<SyncLocation>>
 					{
 						remote: String::from(remote),
 						name: String::from(name),
+						name_encoded: String::from(name_encoded),
 						remote_path: String::from(remote_path),
 						local_path: String::from(local_path),
 						remote_username: String::from(remote_username),
 						remote_password: String::from(remote_password),
+						advance_backups: advance_backups,
 					}
 				);
 			},
