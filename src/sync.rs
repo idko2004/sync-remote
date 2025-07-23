@@ -185,7 +185,7 @@ pub fn start_sync_blocking(sync_location: &SyncLocation)
 			let _ = queue!(stdout, SetForegroundColor(Color::Yellow));
 			let _ = queue!(stdout, Print("*"));
 			let _ = queue!(stdout, SetForegroundColor(Color::Reset));
-			let _ = queue!(stdout, Print(" Making a backup..."));
+			let _ = queue!(stdout, Print(" Making a backup...\n"));
 			let _ = queue!(stdout, SetAttribute(Attribute::Reset));
 			let _ = stdout.flush();
 		}
@@ -604,7 +604,7 @@ fn make_local_backup(all_local_files: &Vec<File>, sync_location: &SyncLocation) 
 		let _ = queue!(stdout, SetForegroundColor(Color::Magenta));
 		let _ = queue!(stdout, Print("\n~~"));
 		let _ = queue!(stdout, SetForegroundColor(Color::Reset));
-		let _ = queue!(stdout, Print(" Preparing backup folder... "));
+		let _ = queue!(stdout, Print(" Preparing backup folder: "));
 		let _ = queue!(stdout, SetAttribute(Attribute::Reset));
 		let _ = queue!(stdout, Print(format!("{backup_folder}")));
 		let _ = stdout.flush();
@@ -717,8 +717,10 @@ fn make_local_backup(all_local_files: &Vec<File>, sync_location: &SyncLocation) 
 		}
 	}
 
-	println!("This failing is just a simulation, everything went great");
-	false
+	let _ = queue!(stdout, Print("\n\n"));
+	let _ = stdout.flush();
+
+	true
 }
 
 fn link_all_files(all_remote_files: &Vec<File>, all_local_files: &Vec<File>, sync_location: &SyncLocation) -> Vec<LinkedFile>
