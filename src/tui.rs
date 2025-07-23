@@ -481,7 +481,7 @@ fn render_add_remote_menu(ui_state: &TuiState, current_string: &str, selected_op
 					(
 						&RedrawOptions
 						{
-							box_title: String::from(" Add a remote "),
+							box_title: String::from(" Add remote "),
 							selectable_options: None,
 							draw_options_at_coordinates: (0, 0),
 							selected_option: 0,
@@ -489,24 +489,21 @@ fn render_add_remote_menu(ui_state: &TuiState, current_string: &str, selected_op
 					);
 					let _ = queue!(stdout, MoveTo(3, 2));
 					let _ = queue!(stdout, SetAttribute(Attribute::Bold));
+					let _ = queue!(stdout, SetForegroundColor(Color::DarkYellow));
 					let _ = queue!(stdout, Print("Name:"));
+					let _ = queue!(stdout, SetForegroundColor(Color::Reset));
 					let _ = queue!(stdout, SetAttribute(Attribute::Reset));
-					let _ = queue!(stdout, SetBackgroundColor(Color::DarkBlue));
-					let _ = queue!(stdout, SetForegroundColor(Color::White));
-					//let _ = queue!(stdout, MoveTo(4, 3));
 					let _ = queue!(stdout, MoveToNextLine(1));
 					let _ = queue!(stdout, MoveToColumn(4));
 					let _ = queue!(stdout, Print("What name or alias would you like to give to the remote?"));
-					//let _ = queue!(stdout, MoveTo(3, 5));
 					let _ = queue!(stdout, MoveToNextLine(2));
 					let _ = queue!(stdout, MoveToColumn(3));
-					let _ = queue!(stdout, SetForegroundColor(Color::Cyan));
+					let _ = queue!(stdout, SetForegroundColor(Color::Blue));
 					let prompt = format!(">> {} ", current_string);
 					let _ = queue!(stdout, Print(&prompt));
-					let _ = queue!(stdout, SetForegroundColor(Color::White));
+					let _ = queue!(stdout, SetForegroundColor(Color::Reset));
 					let _ = queue!(stdout, MoveToColumn(0));
 					let _ = queue!(stdout, MoveToColumn(3 + (prompt.len() as u16) - 1));
-					//let _ = queue!(stdout, MoveTo(3 + (prompt.len() as u16) - 1, 5));
 					let _ = stdout.flush();
 				},
 				AddRemoteTuiStep::SettingRemoteUrl =>
@@ -515,7 +512,7 @@ fn render_add_remote_menu(ui_state: &TuiState, current_string: &str, selected_op
 					(
 						&RedrawOptions
 						{
-							box_title: String::from(" Add a remote "),
+							box_title: String::from(" Add remote "),
 							selectable_options: None,
 							draw_options_at_coordinates: (0, 0),
 							selected_option: 0,
@@ -523,38 +520,30 @@ fn render_add_remote_menu(ui_state: &TuiState, current_string: &str, selected_op
 					);
 					let _ = queue!(stdout, MoveTo(3, 2));
 					let _ = queue!(stdout, SetAttribute(Attribute::Bold));
+					let _ = queue!(stdout, SetForegroundColor(Color::DarkYellow));
 					let _ = queue!(stdout, Print("Remote Host:"));
+					let _ = queue!(stdout, SetForegroundColor(Color::Reset));
 					let _ = queue!(stdout, SetAttribute(Attribute::Reset));
-					let _ = queue!(stdout, SetBackgroundColor(Color::DarkBlue));
-					let _ = queue!(stdout, SetForegroundColor(Color::White));
-					//let _ = queue!(stdout, MoveTo(4, 3));
 					let _ = queue!(stdout, MoveToNextLine(1));
 					let _ = queue!(stdout, MoveToColumn(4));
 					let _ = queue!(stdout, Print("Enter the host of your FTP remote."));
-					//let _ = queue!(stdout, MoveTo(4, 4));
 					let _ = queue!(stdout, MoveToNextLine(1));
 					let _ = queue!(stdout, MoveToColumn(4));
 					let _ = queue!(stdout, Print("(For example: "));
 					let _ = queue!(stdout, SetAttribute(Attribute::Italic));
 					let _ = queue!(stdout, Print("ftp.myserver.com"));
 					let _ = queue!(stdout, SetAttribute(Attribute::Reset));
-					let _ = queue!(stdout, SetBackgroundColor(Color::DarkBlue));
-					let _ = queue!(stdout, SetForegroundColor(Color::White));
 					let _ = queue!(stdout, Print(" or "));
 					let _ = queue!(stdout, SetAttribute(Attribute::Italic));
 					let _ = queue!(stdout, Print("192.168.0.200:8021"));
 					let _ = queue!(stdout, SetAttribute(Attribute::Reset));
-					let _ = queue!(stdout, SetBackgroundColor(Color::DarkBlue));
-					let _ = queue!(stdout, SetForegroundColor(Color::White));
 					let _ = queue!(stdout, Print(")"));
-					//let _ = queue!(stdout, MoveTo(3, 6));
 					let _ = queue!(stdout, MoveToNextLine(2));
 					let _ = queue!(stdout, MoveToColumn(3));
-					let _ = queue!(stdout, SetForegroundColor(Color::Cyan));
+					let _ = queue!(stdout, SetForegroundColor(Color::Blue));
 					let prompt = format!(">> {} ", current_string);
 					let _ = queue!(stdout, Print(&prompt));
-					let _ = queue!(stdout, SetForegroundColor(Color::White));
-					//let _ = queue!(stdout, MoveTo(3 + (prompt.len() as u16) - 1, 6));
+					let _ = queue!(stdout, SetForegroundColor(Color::Reset));
 					let _ = queue!(stdout, MoveToColumn(0));
 					let _ = queue!(stdout, MoveToColumn(3 + (prompt.len() as u16) - 1));
 					let _ = stdout.flush();
@@ -565,7 +554,7 @@ fn render_add_remote_menu(ui_state: &TuiState, current_string: &str, selected_op
 					(
 						&RedrawOptions
 						{
-							box_title: String::from(" Add a remote "),
+							box_title: String::from(" Add remote "),
 							selectable_options: None,
 							draw_options_at_coordinates: (0, 0),
 							selected_option: 0,
@@ -573,32 +562,26 @@ fn render_add_remote_menu(ui_state: &TuiState, current_string: &str, selected_op
 					);
 					let _ = queue!(stdout, MoveTo(3, 2));
 					let _ = queue!(stdout, SetAttribute(Attribute::Bold));
+					let _ = queue!(stdout, SetForegroundColor(Color::DarkYellow));
 					let _ = queue!(stdout, Print("Remote directory:"));
+					let _ = queue!(stdout, SetForegroundColor(Color::Reset));
 					let _ = queue!(stdout, SetAttribute(Attribute::Reset));
-					let _ = queue!(stdout, SetBackgroundColor(Color::DarkBlue));
-					let _ = queue!(stdout, SetForegroundColor(Color::White));
-					//let _ = queue!(stdout, MoveTo(4, 3));
 					let _ = queue!(stdout, MoveToNextLine(1));
 					let _ = queue!(stdout, MoveToColumn(4));
 					let _ = queue!(stdout, Print("Which directory or folder of the remote would you like to sync?"));
-					//let _ = queue!(stdout, MoveTo(4, 4));
 					let _ = queue!(stdout, MoveToNextLine(1));
 					let _ = queue!(stdout, MoveToColumn(4));
 					let _ = queue!(stdout, Print("(For example: "));
 					let _ = queue!(stdout, SetAttribute(Attribute::Italic));
 					let _ = queue!(stdout, Print("/Movies"));
 					let _ = queue!(stdout, SetAttribute(Attribute::Reset));
-					let _ = queue!(stdout, SetBackgroundColor(Color::DarkBlue));
-					let _ = queue!(stdout, SetForegroundColor(Color::White));
 					let _ = queue!(stdout, Print(")"));
-					//let _ = queue!(stdout, MoveTo(3, 6));
 					let _ = queue!(stdout, MoveToNextLine(2));
 					let _ = queue!(stdout, MoveToColumn(4));
-					let _ = queue!(stdout, SetForegroundColor(Color::Cyan));
+					let _ = queue!(stdout, SetForegroundColor(Color::Blue));
 					let prompt = format!(">> /{} ", current_string);
 					let _ = queue!(stdout, Print(&prompt));
-					let _ = queue!(stdout, SetForegroundColor(Color::White));
-					//let _ = queue!(stdout, MoveTo(3 + (prompt.len() as u16) - 1, 6));
+					let _ = queue!(stdout, SetForegroundColor(Color::Reset));
 					let _ = queue!(stdout, MoveToColumn(0));
 					let _ = queue!(stdout, MoveToColumn(3 + (prompt.len() as u16)));
 					let _ = stdout.flush();
@@ -609,7 +592,7 @@ fn render_add_remote_menu(ui_state: &TuiState, current_string: &str, selected_op
 					(
 						&RedrawOptions
 						{
-							box_title: String::from(" Add a remote "),
+							box_title: String::from(" Add remote "),
 							selectable_options: None,
 							draw_options_at_coordinates: (0, 0),
 							selected_option: 0,
@@ -617,38 +600,30 @@ fn render_add_remote_menu(ui_state: &TuiState, current_string: &str, selected_op
 					);
 					let _ = queue!(stdout, MoveTo(3, 2));
 					let _ = queue!(stdout, SetAttribute(Attribute::Bold));
+					let _ = queue!(stdout, SetForegroundColor(Color::DarkYellow));
 					let _ = queue!(stdout, Print("Local directory:"));
+					let _ = queue!(stdout, SetForegroundColor(Color::Reset));
 					let _ = queue!(stdout, SetAttribute(Attribute::Reset));
-					let _ = queue!(stdout, SetBackgroundColor(Color::DarkBlue));
-					let _ = queue!(stdout, SetForegroundColor(Color::White));
-					//let _ = queue!(stdout, MoveTo(4, 3));
 					let _ = queue!(stdout, MoveToNextLine(1));
 					let _ = queue!(stdout, MoveToColumn(4));
 					let _ = queue!(stdout, Print("With which local directory or folder would you like to sync?"));
-					//let _ = queue!(stdout, MoveTo(4, 4));
 					let _ = queue!(stdout, MoveToNextLine(1));
 					let _ = queue!(stdout, MoveToColumn(4));
 					let _ = queue!(stdout, Print("(For example: "));
 					let _ = queue!(stdout, SetAttribute(Attribute::Italic));
 					let _ = queue!(stdout, Print("/home/user/Movies"));
 					let _ = queue!(stdout, SetAttribute(Attribute::Reset));
-					let _ = queue!(stdout, SetBackgroundColor(Color::DarkBlue));
-					let _ = queue!(stdout, SetForegroundColor(Color::White));
 					let _ = queue!(stdout, Print(" or "));
 					let _ = queue!(stdout, SetAttribute(Attribute::Italic));
 					let _ = queue!(stdout, Print("C:\\Users\\user\\Documents"));
 					let _ = queue!(stdout, SetAttribute(Attribute::Reset));
-					let _ = queue!(stdout, SetBackgroundColor(Color::DarkBlue));
-					let _ = queue!(stdout, SetForegroundColor(Color::White));
 					let _ = queue!(stdout, Print(")"));
-					//let _ = queue!(stdout, MoveTo(3, 6));
 					let _ = queue!(stdout, MoveToNextLine(2));
 					let _ = queue!(stdout, MoveToColumn(4));
-					let _ = queue!(stdout, SetForegroundColor(Color::Cyan));
+					let _ = queue!(stdout, SetForegroundColor(Color::Blue));
 					let prompt = format!(">> {} ", current_string);
 					let _ = queue!(stdout, Print(&prompt));
-					let _ = queue!(stdout, SetForegroundColor(Color::White));
-					//let _ = queue!(stdout, MoveTo(3 + (prompt.len() as u16) - 1, 6));
+					let _ = queue!(stdout, SetForegroundColor(Color::Reset));
 					let _ = queue!(stdout, MoveToColumn(0));
 					let _ = queue!(stdout, MoveToColumn(3 + (prompt.len() as u16)));
 					let _ = stdout.flush();
@@ -665,7 +640,7 @@ fn render_add_remote_menu(ui_state: &TuiState, current_string: &str, selected_op
 					(
 						&RedrawOptions
 						{
-							box_title: String::from(" Add a remote "),
+							box_title: String::from(" Add remote "),
 							selectable_options: Some(selectable_options),
 							draw_options_at_coordinates: (2, 0),
 							selected_option: selected_option,
@@ -674,10 +649,10 @@ fn render_add_remote_menu(ui_state: &TuiState, current_string: &str, selected_op
 
 					let _ = queue!(stdout, MoveTo(3, 2));
 					let _ = queue!(stdout, SetAttribute(Attribute::Bold));
+					let _ = queue!(stdout, SetForegroundColor(Color::DarkYellow));
 					let _ = queue!(stdout, Print("How to login:"));
+					let _ = queue!(stdout, SetForegroundColor(Color::Reset));
 					let _ = queue!(stdout, SetAttribute(Attribute::Reset));
-					let _ = queue!(stdout, SetBackgroundColor(Color::DarkBlue));
-					let _ = queue!(stdout, SetForegroundColor(Color::White));
 					let _ = stdout.flush();
 				},
 				AddRemoteTuiStep::SettingRemoteUsername =>
@@ -686,7 +661,7 @@ fn render_add_remote_menu(ui_state: &TuiState, current_string: &str, selected_op
 					(
 						&RedrawOptions
 						{
-							box_title: String::from(" Add a remote "),
+							box_title: String::from(" Add remote "),
 							selectable_options: None,
 							draw_options_at_coordinates: (0, 0),
 							selected_option: 0,
@@ -694,15 +669,16 @@ fn render_add_remote_menu(ui_state: &TuiState, current_string: &str, selected_op
 					);
 					let _ = queue!(stdout, MoveTo(3, 2));
 					let _ = queue!(stdout, SetAttribute(Attribute::Bold));
+					let _ = queue!(stdout, SetForegroundColor(Color::DarkYellow));
 					let _ = queue!(stdout, Print("Username:"));
-					//let _ = queue!(stdout, MoveTo(3, 4));
+					let _ = queue!(stdout, SetForegroundColor(Color::Reset));
+					let _ = queue!(stdout, SetAttribute(Attribute::Reset));
 					let _ = queue!(stdout, MoveToNextLine(2));
 					let _ = queue!(stdout, MoveToColumn(4));
-					let _ = queue!(stdout, SetForegroundColor(Color::Cyan));
+					let _ = queue!(stdout, SetForegroundColor(Color::Blue));
 					let prompt = format!(">> {} ", current_string);
 					let _ = queue!(stdout, Print(&prompt));
-					let _ = queue!(stdout, SetForegroundColor(Color::White));
-					//let _ = queue!(stdout, MoveTo(3 + (prompt.len() as u16) - 1, 4));
+					let _ = queue!(stdout, SetForegroundColor(Color::Reset));
 					let _ = queue!(stdout, MoveToColumn(0));
 					let _ = queue!(stdout, MoveToColumn(3 + (prompt.len() as u16)));
 					let _ = stdout.flush();
@@ -713,7 +689,7 @@ fn render_add_remote_menu(ui_state: &TuiState, current_string: &str, selected_op
 					(
 						&RedrawOptions
 						{
-							box_title: String::from(" Add a remote "),
+							box_title: String::from(" Add remote "),
 							selectable_options: None,
 							draw_options_at_coordinates: (0, 0),
 							selected_option: 0,
@@ -721,19 +697,19 @@ fn render_add_remote_menu(ui_state: &TuiState, current_string: &str, selected_op
 					);
 					let _ = queue!(stdout, MoveTo(3, 2));
 					let _ = queue!(stdout, SetAttribute(Attribute::Bold));
+					let _ = queue!(stdout, SetForegroundColor(Color::DarkYellow));
 					let _ = queue!(stdout, Print("Password:"));
+					let _ = queue!(stdout, SetForegroundColor(Color::Reset));
 					let _ = queue!(stdout, SetAttribute(Attribute::Reset));
-					let _ = queue!(stdout, SetBackgroundColor(Color::Yellow));
-					let _ = queue!(stdout, SetForegroundColor(Color::Black));
-					//let _ = queue!(stdout, MoveTo(4, 3));
 					let _ = queue!(stdout, MoveToNextLine(1));
 					let _ = queue!(stdout, MoveToColumn(4));
+					let _ = queue!(stdout, SetBackgroundColor(Color::DarkRed));
+					let _ = queue!(stdout, SetForegroundColor(Color::White));
 					let _ = queue!(stdout, Print("Keep in mind that passwords are stored insecurely as plain text!!"));
-					//let _ = queue!(stdout, MoveTo(3, 5));
 					let _ = queue!(stdout, MoveToNextLine(2));
 					let _ = queue!(stdout, MoveToColumn(4));
-					let _ = queue!(stdout, SetBackgroundColor(Color::DarkBlue));
-					let _ = queue!(stdout, SetForegroundColor(Color::Cyan));
+					let _ = queue!(stdout, SetBackgroundColor(Color::Reset));
+					let _ = queue!(stdout, SetForegroundColor(Color::Blue));
 					let mut password_chars = String::with_capacity(current_string.len());
 					for _ in 0..current_string.len()
 					{
@@ -741,8 +717,7 @@ fn render_add_remote_menu(ui_state: &TuiState, current_string: &str, selected_op
 					}
 					let prompt = format!(">> {} ", password_chars);
 					let _ = queue!(stdout, Print(&prompt));
-					let _ = queue!(stdout, SetForegroundColor(Color::White));
-					//let _ = queue!(stdout, MoveTo(3 + (prompt.len() as u16) - 1, 5));
+					let _ = queue!(stdout, SetForegroundColor(Color::Reset));
 					let _ = queue!(stdout, MoveToColumn(0));
 					let _ = queue!(stdout, MoveToColumn(3 + (prompt.len() as u16)));
 					let _ = stdout.flush();
@@ -809,7 +784,7 @@ fn render_add_remote_menu(ui_state: &TuiState, current_string: &str, selected_op
 					(
 						&RedrawOptions
 						{
-							box_title: String::from(" Add a remote "),
+							box_title: String::from(" Add remote "),
 							selectable_options: Some(selectable_options),
 							draw_options_at_coordinates: (12, 0),
 							selected_option: selected_option,
@@ -818,73 +793,52 @@ fn render_add_remote_menu(ui_state: &TuiState, current_string: &str, selected_op
 
 					let _ = queue!(stdout, MoveTo(3, 2));
 					let _ = queue!(stdout, SetAttribute(Attribute::Bold));
+					let _ = queue!(stdout, SetForegroundColor(Color::DarkYellow));
 					let _ = queue!(stdout, Print("Basic settings are done!"));
+					let _ = queue!(stdout, SetForegroundColor(Color::Reset));
 					let _ = queue!(stdout, SetAttribute(Attribute::Reset));
-					let _ = queue!(stdout, SetBackgroundColor(Color::DarkBlue));
-					let _ = queue!(stdout, SetForegroundColor(Color::White));
-					//let _ = queue!(stdout, MoveTo(4, 3));
 					let _ = queue!(stdout, MoveToNextLine(1));
 					let _ = queue!(stdout, MoveToColumn(4));
 					let _ = queue!(stdout, Print("Are these settings ok?"));
-					//let _ = queue!(stdout, MoveTo(4, 5));
 					let _ = queue!(stdout, MoveToNextLine(2));
 					let _ = queue!(stdout, MoveToColumn(4));
 					let _ = queue!(stdout, SetAttribute(Attribute::Bold));
 					let _ = queue!(stdout, Print("Name: "));
 					let _ = queue!(stdout, SetAttribute(Attribute::Reset));
-					let _ = queue!(stdout, SetBackgroundColor(Color::DarkBlue));
-					let _ = queue!(stdout, SetForegroundColor(Color::White));
 					let _ = queue!(stdout, Print(name));
-					//let _ = queue!(stdout, MoveTo(4, 6));
 					let _ = queue!(stdout, MoveToNextLine(1));
 					let _ = queue!(stdout, MoveToColumn(4));
 					let _ = queue!(stdout, SetAttribute(Attribute::Bold));
 					let _ = queue!(stdout, Print("Remote: "));
 					let _ = queue!(stdout, SetAttribute(Attribute::Reset));
-					let _ = queue!(stdout, SetBackgroundColor(Color::DarkBlue));
-					let _ = queue!(stdout, SetForegroundColor(Color::White));
 					let _ = queue!(stdout, Print(remote_url));
-					//let _ = queue!(stdout, MoveTo(4, 7));
 					let _ = queue!(stdout, MoveToNextLine(1));
 					let _ = queue!(stdout, MoveToColumn(4));
 					let _ = queue!(stdout, SetAttribute(Attribute::Bold));
 					let _ = queue!(stdout, Print("Remote path: "));
 					let _ = queue!(stdout, SetAttribute(Attribute::Reset));
-					let _ = queue!(stdout, SetBackgroundColor(Color::DarkBlue));
-					let _ = queue!(stdout, SetForegroundColor(Color::White));
 					let _ = queue!(stdout, Print(remote_path));
-					//let _ = queue!(stdout, MoveTo(4, 8));
 					let _ = queue!(stdout, MoveToNextLine(1));
 					let _ = queue!(stdout, MoveToColumn(4));
 					let _ = queue!(stdout, SetAttribute(Attribute::Bold));
 					let _ = queue!(stdout, Print("Local path: "));
 					let _ = queue!(stdout, SetAttribute(Attribute::Reset));
-					let _ = queue!(stdout, SetBackgroundColor(Color::DarkBlue));
-					let _ = queue!(stdout, SetForegroundColor(Color::White));
 					let _ = queue!(stdout, Print(local_path));
-					//let _ = queue!(stdout, MoveTo(4, 9));
 					let _ = queue!(stdout, MoveToNextLine(1));
 					let _ = queue!(stdout, MoveToColumn(4));
 					let _ = queue!(stdout, SetAttribute(Attribute::Bold));
 					let _ = queue!(stdout, Print("Username: "));
 					let _ = queue!(stdout, SetAttribute(Attribute::Reset));
-					let _ = queue!(stdout, SetBackgroundColor(Color::DarkBlue));
-					let _ = queue!(stdout, SetForegroundColor(Color::White));
 					let _ = queue!(stdout, Print(remote_username));
-					//let _ = queue!(stdout, MoveTo(4, 10));
 					let _ = queue!(stdout, MoveToNextLine(1));
 					let _ = queue!(stdout, MoveToColumn(4));
 					let _ = queue!(stdout, SetAttribute(Attribute::Bold));
 					let _ = queue!(stdout, Print("Password: "));
 					let _ = queue!(stdout, SetAttribute(Attribute::Reset));
-					let _ = queue!(stdout, SetBackgroundColor(Color::DarkBlue));
-					let _ = queue!(stdout, SetForegroundColor(Color::White));
 					let _ = queue!(stdout, Print(remote_password.as_str()));
-					//let _ = queue!(stdout, MoveTo(4, 12));
 					let _ = queue!(stdout, MoveToNextLine(2));
 					let _ = queue!(stdout, MoveToColumn(4));
 					let _ = queue!(stdout, Print("Save these settings or continue to more advanced configurations?"));
-					//let _ = queue!(stdout, MoveTo(4, 14));
 					let _ = queue!(stdout, MoveToNextLine(2));
 					let _ = queue!(stdout, MoveToColumn(3));
 					let _ = stdout.flush();
@@ -910,8 +864,8 @@ fn redraw(redraw_options: &RedrawOptions)
 {
 	let mut stdout = stdout();
 
-	let _ = queue!(stdout, SetBackgroundColor(Color::DarkBlue));
-	let _ = queue!(stdout, SetForegroundColor(Color::White));
+	//let _ = queue!(stdout, SetBackgroundColor(Color::DarkGrey));
+	//let _ = queue!(stdout, SetForegroundColor(Color::Black));
 	let _ = queue!(stdout, Clear(ClearType::All));
 	let _ = queue!(stdout, Clear(ClearType::Purge));
 	let _ = queue!(stdout, MoveTo(0, 1));
@@ -1037,13 +991,13 @@ fn draw_options(redraw_options: &RedrawOptions, mut stdout: Stdout) -> Stdout
 				}
 				else
 				{
-					let _ = queue!(stdout, SetBackgroundColor(Color::Cyan));
+					let _ = queue!(stdout, SetBackgroundColor(Color::Yellow));
 					let _ = queue!(stdout, SetForegroundColor(Color::Black));
 					let _ = queue!(stdout, SetAttribute(Attribute::Bold));
 					let _ = queue!(stdout, Print(format!(" -> {item} ")));
 					let _ = queue!(stdout, SetAttribute(Attribute::Reset));
-					let _ = queue!(stdout, SetForegroundColor(Color::White));
-					let _ = queue!(stdout, SetBackgroundColor(Color::DarkBlue));
+					let _ = queue!(stdout, SetForegroundColor(Color::Reset));
+					let _ = queue!(stdout, SetBackgroundColor(Color::Reset));
 				}
 				
 				i += 1;
