@@ -185,7 +185,7 @@ pub fn start_sync_blocking(sync_location: &SyncLocation)
 			let _ = queue!(stdout, SetForegroundColor(Color::Yellow));
 			let _ = queue!(stdout, Print("*"));
 			let _ = queue!(stdout, SetForegroundColor(Color::Reset));
-			let _ = queue!(stdout, Print(" Making a backup...\n"));
+			let _ = queue!(stdout, Print(" Making a backup..."));
 			let _ = queue!(stdout, SetAttribute(Attribute::Reset));
 			let _ = stdout.flush();
 		}
@@ -201,6 +201,11 @@ pub fn start_sync_blocking(sync_location: &SyncLocation)
 				let _ = queue!(stdout, SetAttribute(Attribute::Reset));
 				let _ = queue!(stdout, SetForegroundColor(Color::Reset));
 				let _ = queue!(stdout, Print(format!("Backup failed! Aboring...\n")));
+				let _ = queue!(stdout, SetAttribute(Attribute::Bold));
+				let _ = queue!(stdout, SetForegroundColor(Color::Yellow));
+				let _ = queue!(stdout, Print(format!("[WARN] Your backup of this remote may now be wrong, you should not rely on it in it's current state. But your local files were not touched yet, so they are fine.\n")));
+				let _ = queue!(stdout, SetAttribute(Attribute::Reset));
+				let _ = queue!(stdout, SetForegroundColor(Color::Reset));
 				let _ = stdout.flush();
 				return;
 			}
@@ -591,44 +596,129 @@ fn list_local_directory(directory: &String) -> Option<fs::ReadDir>
 
 fn make_local_backup(all_local_files: &Vec<File>, sync_location: &SyncLocation) -> bool
 {
+	let backup_folder = format!("{}/backups/{}", get_program_folder(), sync_location.name_encoded);
+
 	let mut stdout = io::stdout();
 	{ //Imprimir bonito
 		let _ = queue!(stdout, SetAttribute(Attribute::Bold));
-		let _ = queue!(stdout, SetForegroundColor(Color::Green));
+		let _ = queue!(stdout, SetForegroundColor(Color::Magenta));
 		let _ = queue!(stdout, Print("\n~~"));
 		let _ = queue!(stdout, SetForegroundColor(Color::Reset));
-		let _ = queue!(stdout, Print(" Preparing backup folder..."));
+		let _ = queue!(stdout, Print(" Preparing backup folder... "));
 		let _ = queue!(stdout, SetAttribute(Attribute::Reset));
+		let _ = queue!(stdout, Print(format!("{backup_folder}")));
 		let _ = stdout.flush();
 	}
 
-	let backup_folder = format!("{}/backups/{}", get_program_folder(), sync_location.name_encoded);
-
+	//Empty backup folder
 	match fs::exists(&backup_folder)
 	{
-		Ok(exits) =>
+		Ok(exists) =>
 		{
-
+			if exists
+			{
+				match fs::remove_dir_all(&backup_folder)
+				{
+					Ok(_) =>
+					{
+						let _ = queue!(stdout, SetForegroundColor(Color::Green));
+						let _ = queue!(stdout, Print(" (done!)"));
+						let _ = queue!(stdout, SetForegroundColor(Color::Reset));
+						let _ = stdout.flush();
+					},
+					Err(error) =>
+					{
+						let _ = queue!(stdout, SetForegroundColor(Color::Red));
+						let _ = queue!(stdout, Print("\n[ERROR] "));
+						let _ = queue!(stdout, SetForegroundColor(Color::Reset));
+						let _ = queue!(stdout, Print(format!("Failed to empty backup folder ({}), {}", &backup_folder, error)));
+						let _ = stdout.flush();
+						return false;
+					}
+				}
+			}
 		},
 		Err(error) =>
 		{
 			let _ = queue!(stdout, SetForegroundColor(Color::Red));
-			let _ = queue!(stdout, Print(" (failed!) \n[ERROR] "));
+			let _ = queue!(stdout, Print("\n[ERROR] "));
 			let _ = queue!(stdout, SetForegroundColor(Color::Reset));
 			let _ = queue!(stdout, Print(format!("Failed to comprobe the existence of the backup folder ({}), {}", &backup_folder, error)));
 			let _ = stdout.flush();
+			return false;
 		}
 	}
 
-	if fs::exists(&backup_folder)
+	//Create a new folder
+	match fs::create_dir_all(&backup_folder)
 	{
-		fs::remove_dir_all(&backup_folder)
+		Ok(_) => (),
+		Err(error) =>
 		{
-
-		}	
+			let _ = queue!(stdout, SetForegroundColor(Color::Red));
+			let _ = queue!(stdout, Print("\n[ERROR] "));
+			let _ = queue!(stdout, SetForegroundColor(Color::Reset));
+			let _ = queue!(stdout, Print(format!("Failed to create backup folder ({}), {}", &backup_folder, error)));
+			let _ = stdout.flush();
+			return false;
+		}
 	}
 
-	true
+	//Copy the files
+	for file in all_local_files
+	{
+		{ //Imprimir bonito
+			let _ = queue!(stdout, SetAttribute(Attribute::Bold));
+			let _ = queue!(stdout, SetForegroundColor(Color::Magenta));
+			let _ = queue!(stdout, Print("\n~~"));
+			let _ = queue!(stdout, SetForegroundColor(Color::Reset));
+			let _ = queue!(stdout, Print(" Backing up: "));
+			let _ = queue!(stdout, SetAttribute(Attribute::Reset));
+			let _ = queue!(stdout, Print(format!("{}", &file.relative_path)));
+			let _ = stdout.flush();
+		}
+
+		let backup_path = format!("{backup_folder}{}", &file.relative_path);
+		let backup_directory = format!("{backup_folder}{}", get_relative_directory(file, &sync_location.local_path));
+
+		match fs::create_dir_all(&backup_directory)
+		{
+			Ok(_) => (),
+			Err(error) =>
+			{
+				let _ = queue!(stdout, SetForegroundColor(Color::Red));
+				let _ = queue!(stdout, Print(" (failed!) \n[ERROR] "));
+				let _ = queue!(stdout, SetForegroundColor(Color::Reset));
+				let _ = queue!(stdout, Print(format!("Failed to create folder of backup ({}), {}", &backup_directory, error)));
+				let _ = stdout.flush();
+				return false;
+			}
+		}
+
+		//println!("{}\n{}\n\n", &file.fullpath, &backup_path);
+		match fs::copy(&file.fullpath, &backup_path)
+		{
+			Ok(_) =>
+			{
+				let _ = queue!(stdout, SetForegroundColor(Color::Green));
+				let _ = queue!(stdout, Print(" (done!)"));
+				let _ = queue!(stdout, SetForegroundColor(Color::Reset));
+				let _ = stdout.flush();
+			},
+			Err(error) =>
+			{
+				let _ = queue!(stdout, SetForegroundColor(Color::Red));
+				let _ = queue!(stdout, Print(" (failed!) \n[ERROR] "));
+				let _ = queue!(stdout, SetForegroundColor(Color::Reset));
+				let _ = queue!(stdout, Print(format!("Failed to backup file ({}), {}", &file.fullpath, error)));
+				let _ = stdout.flush();
+				return false;
+			}
+		}
+	}
+
+	println!("This failing is just a simulation, everything went great");
+	false
 }
 
 fn link_all_files(all_remote_files: &Vec<File>, all_local_files: &Vec<File>, sync_location: &SyncLocation) -> Vec<LinkedFile>

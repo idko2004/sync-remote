@@ -1,4 +1,4 @@
-use std::fs;
+use std::{fs, env};
 use serde_derive::Serialize;
 
 #[derive(Clone, Serialize)]
@@ -16,7 +16,34 @@ pub struct SyncLocation
 
 pub fn get_program_folder() -> String
 {
-	String::from("~/.local/share/idko2004.github.io/sync-remote")
+	let default = String::from("sync-remote");
+	match env::consts::OS
+	{
+		"linux" =>
+		{
+			match env::var("USER")
+			{
+				Ok(user) =>
+				{
+					if !user.is_empty()
+					{
+						format!("/home/{user}/.local/share/idko2004.github.io/sync-remote")
+					}
+					else
+					{
+						default
+					}
+				},
+				Err(error) =>
+				{
+					println!("[ERROR] USER environment variable is not set, using current directory as data folder ({error})");
+					default
+				}
+			}
+			
+		},
+		_ => default,
+	}
 }
 
 fn get_config_location() -> String
@@ -272,16 +299,26 @@ pub fn get_config() -> Option<Vec<SyncLocation>>
 fn save_default_config() -> Option<String>
 {
 	let default_config_contents = "[]"; //Un array vacío en json
-	match fs::write(get_config_location(), default_config_contents)
+	match fs::create_dir_all(get_program_folder())
 	{
-		Ok(_) => (),
+		Ok(_) =>
+		{
+			match fs::write(get_config_location(), default_config_contents)
+			{
+				Ok(_) => Some(String::from(default_config_contents)), //Devolver un vector vacío porque no hay ningún remote por defecto.
+				Err(error) =>
+				{
+					println!("[ERROR] Failed to save config file!! {error}");
+					None
+				}
+			}
+		},
 		Err(error) =>
 		{
-			println!("[ERROR] Failed to save config file!! {error}");
-			return None;
+			println!("[ERROR] Failed to create program folder!! {error}");
+			None
 		}
 	}
-	Some(String::from(default_config_contents)) //Devolver un vector vacío porque no hay ningún remote por defecto.
 }
 
 pub fn add_new_remote(remote: &SyncLocation) -> bool
