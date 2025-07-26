@@ -412,8 +412,9 @@ fn logic_add_remote_menu(ui_state: &TuiState, new_remote_details: &mut NewRemote
 							}
 							else
 							{
-								new_remote_details.remote_username = Some(String::from("anonymous"));
-								new_remote_details.remote_password = Some(String::from("anon@localhost"));
+								//Setting anonymous login is now handled on main.rs
+								//new_remote_details.remote_username = Some(String::from("anonymous"));
+								//new_remote_details.remote_password = Some(String::from("anon@localhost"));
 								TuiState::AddRemote(AddRemoteTuiStep::BasicSummary)
 							}
 						},

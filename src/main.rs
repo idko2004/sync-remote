@@ -87,12 +87,12 @@ fn main()
 			let remote_username = match new_remote_details.remote_username
 			{
 				Some(value) => value,
-				None => String::from(""),
+				None => String::from("anonymous"),
 			};
 			let remote_password = match new_remote_details.remote_password
 			{
 				Some(value) => value,
-				None => String::from(""),
+				None => String::from("anon@localhost"),
 			};
 			let advanced_backups = match new_remote_details.advanced_backups
 			{
