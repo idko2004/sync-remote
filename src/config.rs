@@ -84,7 +84,7 @@ fn read_config_file_as_json() -> Option<serde_json::Value>
 		Ok(value) => value,
 		Err(error) =>
 		{
-			println!("[ERROR] Failed to parse config as json, {}", error);
+			println!("[ERROR] Failed to parse config as json, {}  (Please fix this, config file is located at \"{}\")", error, get_config_location());
 			return None;
 		}
 	};
@@ -105,7 +105,7 @@ pub fn get_config() -> Option<Vec<SyncLocation>>
 		Some(value) => value,
 		None =>
 		{
-			println!("[ERROR] JSON config should be an array!");
+			println!("[ERROR] JSON config should be an array! (Please fix this, config file is located at \"{}\")", get_config_location());
 			return None;
 		}
 	};
@@ -118,26 +118,6 @@ pub fn get_config() -> Option<Vec<SyncLocation>>
 		{
 			Some(obj) =>
 			{
-				let remote = match obj.get("remote")
-				{
-					Some(value) =>
-					{
-						match value.as_str()
-						{
-							Some(value) => value,
-							None =>
-							{
-								println!("[ERROR] Some elements of the config file are invalid! - remote should be a string!");
-								continue;
-							}
-						}
-					},
-					None =>
-					{
-						println!("[ERROR] Some elements of the config file are invalid! - Failed to obtain remote value");
-						continue;
-					}
-				};
 				let name = match obj.get("name")
 				{
 					Some(value) =>
@@ -147,14 +127,34 @@ pub fn get_config() -> Option<Vec<SyncLocation>>
 							Some(value) => value,
 							None =>
 							{
-								println!("[ERROR] Some elements of the config file are invalid! - name should be a string!");
+								println!("[ERROR] Config error: field name should be a string! (Please fix this, config file is located at \"{}\")", get_config_location());
 								continue;
 							}
 						}
 					},
 					None =>
 					{
-						println!("[ERROR] Some elements of the config file are invalid! - Failed to obtain name value");
+						println!("[ERROR] Config error: remote doesn't have a name field (string). (Please fix this, config file is located at \"{}\")", get_config_location());
+						continue;
+					}
+				};
+				let remote = match obj.get("remote")
+				{
+					Some(value) =>
+					{
+						match value.as_str()
+						{
+							Some(value) => value,
+							None =>
+							{
+								println!("[ERROR] Config error: Remote with name \"{name}\" has an invalid field! - remote should be a string! (Please fix this, config file is located at \"{}\")", get_config_location());
+								continue;
+							}
+						}
+					},
+					None =>
+					{
+						println!("[ERROR] Config error: remote with name \"{name}\" doesn't have a \"remote\" field (string) (Please fix this, config file is located at \"{}\")", get_config_location());
 						continue;
 					}
 				};
@@ -167,14 +167,14 @@ pub fn get_config() -> Option<Vec<SyncLocation>>
 							Some(value) => value,
 							None =>
 							{
-								println!("[ERROR] Some elements of the config file are invalid - name_encoded should be a string!");
+								println!("[ERROR] Config error: Remote with name \"{name}\" has an invalid field! - name_encoded should be a string! (Please fix this, config file is located at \"{}\")", get_config_location());
 								continue;
 							}
 						}
 					},
 					None =>
 					{
-						println!("[ERROR] Some elements of the config file are invalid! - Failed to obtain name_encoded");
+						println!("[ERROR] Config error: Remote with name \"{name}\" doesn't have a name_encoded field (string). (Please fix this, config file is located at \"{}\")", get_config_location());
 						continue;
 					}
 				};
@@ -187,14 +187,14 @@ pub fn get_config() -> Option<Vec<SyncLocation>>
 							Some(value) => value,
 							None =>
 							{
-								println!("[ERROR] Some elements of the config file are invalid! - remote_path should be a string!");
+								println!("[ERROR] Config error: Remote with name \"{name}\" has an invalid field! - remote_path should be a string! (Please fix this, config file is located at \"{}\")", get_config_location());
 								continue;
 							}
 						}
 					},
 					None =>
 					{
-						println!("[ERROR] Some elements of the config file are invalid! - Failed to obtain remote_path value");
+						println!("[ERROR] Config error: Remote with name \"{name}\" doesn't have a remote_path field (string). (Please fix this, config file is located at \"{}\")", get_config_location());
 						continue;
 					}
 				};
@@ -207,14 +207,14 @@ pub fn get_config() -> Option<Vec<SyncLocation>>
 							Some(value) => value,
 							None =>
 							{
-								println!("[ERROR] Some elements of the config file are invalid! - local_path should be a string!");
+								println!("[ERROR] Config error: Remote with name \"{name}\" has an invalid field! - local_path should be a string! (Please fix this, config file is located at \"{}\")", get_config_location());
 								continue;
 							}
 						}
 					},
 					None =>
 					{
-						println!("[ERROR] Some elements of the config file are invalid! - Failed to obtain remote value");
+						println!("[ERROR] Config error: Remote with name \"{name}\" doesn't have a local_path field (string). (Please fix this, config file is located at \"{}\")", get_config_location());
 						continue;
 					}
 				};
@@ -227,14 +227,14 @@ pub fn get_config() -> Option<Vec<SyncLocation>>
 							Some(value) => value,
 							None =>
 							{
-								println!("[ERROR] Some elements of the config file are invalid! - remote_username should be a string!");
+								println!("[ERROR] Config error: Remote with name \"{name}\" has an invalid field! - remote_username should be a string! (Please fix this, config file is located at \"{}\")", get_config_location());
 								continue;
 							}
 						}
 					},
 					None =>
 					{
-						println!("[ERROR] Some elements of the config file are invalid! - Failed to obtain remote_username value");
+						println!("[ERROR] Config error: Remote with name \"{name}\" doesn't have a remote_username field (string). (Please fix this, config file is located at \"{}\")", get_config_location());
 						continue;
 					}
 				};
@@ -247,14 +247,14 @@ pub fn get_config() -> Option<Vec<SyncLocation>>
 							Some(value) => value,
 							None =>
 							{
-								println!("[ERROR] Some elements of the config file are invalid! - remote_password should be a string!");
+								println!("[ERROR] Config error: Remote with name \"{name}\" has an invalid field! - remote_password should be a string! (Please fix this, config file is located at \"{}\")", get_config_location());
 								continue;
 							}
 						}
 					},
 					None =>
 					{
-						println!("[ERROR] Some elements of the config file are invalid! - Failed to obtain remote_password value");
+						println!("[ERROR] Remote with name \"{name}\" doesn't have a remote_password field (string). (Please fix this, config file is located at \"{}\")", get_config_location());
 						continue;
 					}
 				};
@@ -267,14 +267,14 @@ pub fn get_config() -> Option<Vec<SyncLocation>>
 							Some(value) => value,
 							None =>
 							{
-								println!("[ERROR] Some elements of teh config file are invalid! - advanced_backups should be a boolean!");
+								println!("[ERROR] Config error: Remote with name \"{name}\" has an invalid field! - advanced_backups should be a boolean! (Please fix this, config file is located at \"{}\")", get_config_location());
 								continue;
 							}
 						}
 					},
 					None =>
 					{
-						println!("[ERROR] Some elements of the config file are invalid! - Failed to obtain advanced_backups value");
+						println!("[ERROR] Remote with name \"{name}\" doesn't have an advanced_backups field (boolean). (Please fix this, config file is located at \"{}\")", get_config_location());
 						continue;
 					}
 				};
@@ -296,7 +296,7 @@ pub fn get_config() -> Option<Vec<SyncLocation>>
 			},
 			None =>
 			{
-				println!("[ERROR] Some elements of the config file are invalid!");
+				println!("[ERROR] Config error: Remotes in config file should be objects! (Please fix this, config file is located at \"{}\")", get_config_location());
 			}
 		}
 	}
