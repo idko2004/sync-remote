@@ -820,7 +820,7 @@ fn render_add_remote_menu(ui_state: &TuiState, current_string: &str, selected_op
 					let _ = queue!(stdout, MoveToNextLine(1));
 					let _ = queue!(stdout, MoveToColumn(4));
 					let _ = queue!(stdout, SetAttribute(Attribute::Bold));
-					let _ = queue!(stdout, Print("Remote path: "));
+					let _ = queue!(stdout, Print("Remote path: /"));
 					let _ = queue!(stdout, SetAttribute(Attribute::Reset));
 					let _ = queue!(stdout, Print(remote_path));
 					let _ = queue!(stdout, MoveToNextLine(1));
