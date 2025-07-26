@@ -412,6 +412,8 @@ fn logic_add_remote_menu(ui_state: &TuiState, new_remote_details: &mut NewRemote
 							}
 							else
 							{
+								new_remote_details.remote_username = Some(String::from("anonymous"));
+								new_remote_details.remote_password = Some(String::from("anon@localhost"));
 								TuiState::AddRemote(AddRemoteTuiStep::BasicSummary)
 							}
 						},
@@ -636,7 +638,7 @@ fn render_add_remote_menu(ui_state: &TuiState, current_string: &str, selected_op
 					let selectable_options: Vec<String> = vec!
 					[
 						String::from("With username and password"),
-						String::from("Anonimous login"),
+						String::from("anonymous login"),
 					];
 
 					redraw

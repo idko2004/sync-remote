@@ -102,7 +102,6 @@ pub fn start_sync_blocking(sync_location: &SyncLocation)
 		let _ = queue!(stdout, SetAttribute(Attribute::Reset));
 		let _ = stdout.flush();
 	}
-
 	let ftp_stream = match FtpStream::connect(&sync_location.remote)
 	{
 		Ok(value) => value,
@@ -118,9 +117,9 @@ pub fn start_sync_blocking(sync_location: &SyncLocation)
 			return;
 		}
 	};
-
 	let mut ftp_stream = ftp_stream.active_mode(Duration::from_secs(120));
 
+	
 	{ //Logging in message
 		let _ = queue!(stdout, SetAttribute(Attribute::Bold));
 		let _ = queue!(stdout, SetForegroundColor(Color::Yellow));
@@ -130,14 +129,9 @@ pub fn start_sync_blocking(sync_location: &SyncLocation)
 		let _ = queue!(stdout, SetAttribute(Attribute::Reset));
 		let _ = stdout.flush();
 	}
-
 	match ftp_stream.login(&sync_location.remote_username, &sync_location.remote_password)
 	{
-		Ok(_) =>
-		{
-			//println!("¡Sesión iniciada!");
-			()
-		}
+		Ok(_) => (),
 		Err(error) =>
 		{
 			let _ = queue!(stdout, SetAttribute(Attribute::Bold));
@@ -161,8 +155,19 @@ pub fn start_sync_blocking(sync_location: &SyncLocation)
 		let _ = queue!(stdout, SetAttribute(Attribute::Reset));
 		let _ = stdout.flush();
 	}
-
-	let all_remote_files = get_all_remote_files_recursive_from(&sync_location.remote_path, &mut ftp_stream);
+	let all_remote_files = match get_all_remote_files_recursive_from(&sync_location.remote_path, &mut ftp_stream)
+	{
+		Some(value) => value,
+		None =>
+		{
+			let _ = queue!(stdout, SetAttribute(Attribute::Bold));
+			let _ = queue!(stdout, SetForegroundColor(Color::Red));
+			let _ = queue!(stdout, Print("\n[ERROR] Listing remote files failed! Aboring...\n"));
+			let _ = queue!(stdout, SetAttribute(Attribute::Reset));
+			let _ = queue!(stdout, SetForegroundColor(Color::Reset));
+			return;
+		}
+	};
 
 
 	{ //Listing local files message
@@ -174,8 +179,19 @@ pub fn start_sync_blocking(sync_location: &SyncLocation)
 		let _ = queue!(stdout, SetAttribute(Attribute::Reset));
 		let _ = stdout.flush();
 	}
-
-	let all_local_files = get_all_local_files_recursive_from(&sync_location.local_path);
+	let all_local_files = match get_all_local_files_recursive_from(&sync_location.local_path)
+	{
+		Some(value) => value,
+		None =>
+		{
+			let _ = queue!(stdout, SetAttribute(Attribute::Bold));
+			let _ = queue!(stdout, SetForegroundColor(Color::Red));
+			let _ = queue!(stdout, Print("\n[ERROR] Listing local files failed! Aboring...\n"));
+			let _ = queue!(stdout, SetAttribute(Attribute::Reset));
+			let _ = queue!(stdout, SetForegroundColor(Color::Reset));
+			return;
+		}
+	};
 
 
 	if sync_location.advanced_backups
@@ -200,10 +216,10 @@ pub fn start_sync_blocking(sync_location: &SyncLocation)
 				let _ = queue!(stdout, Print("\n[ERROR] "));
 				let _ = queue!(stdout, SetAttribute(Attribute::Reset));
 				let _ = queue!(stdout, SetForegroundColor(Color::Reset));
-				let _ = queue!(stdout, Print(format!("Backup failed! Aboring...\n")));
+				let _ = queue!(stdout, Print("Backup failed! Aboring...\n"));
 				let _ = queue!(stdout, SetAttribute(Attribute::Bold));
 				let _ = queue!(stdout, SetForegroundColor(Color::Yellow));
-				let _ = queue!(stdout, Print(format!("[WARN] Your backup of this remote may now be wrong, you should not rely on it in it's current state. But your local files were not touched yet, so they are fine.\n")));
+				let _ = queue!(stdout, Print("[WARN] Your backup of this remote may now be wrong, you should not rely on it in it's current state. But your local files were not touched yet, so they are fine.\n"));
 				let _ = queue!(stdout, SetAttribute(Attribute::Reset));
 				let _ = queue!(stdout, SetForegroundColor(Color::Reset));
 				let _ = stdout.flush();
@@ -250,7 +266,7 @@ pub fn start_sync_blocking(sync_location: &SyncLocation)
 	sync_files(&all_files_linked, sync_location, &mut ftp_stream);
 }
 
-fn get_all_remote_files_recursive_from(directory: &String, ftp_stream: &mut FtpStream) -> Vec<File>
+fn get_all_remote_files_recursive_from(directory: &String, ftp_stream: &mut FtpStream) -> Option<Vec<File>>
 {
 	let mut current_directory: String = directory.clone();
 	let mut tree: Vec<File> = Vec::new();
@@ -322,6 +338,7 @@ fn get_all_remote_files_recursive_from(directory: &String, ftp_stream: &mut FtpS
 				let _ = queue!(stdout, SetForegroundColor(Color::Reset));
 				let _ = queue!(stdout, Print(format!("Failed to list remote directory \"{}\"!\n", current_directory)));
 				let _ = stdout.flush();
+				return None;
 			}
 		}
 
@@ -333,7 +350,7 @@ fn get_all_remote_files_recursive_from(directory: &String, ftp_stream: &mut FtpS
 		i += 1;
 	}
 
-	tree
+	Some(tree)
 }
 
 fn list_remote_directory(directory: &String, ftp_stream: &mut FtpStream) -> Option<Vec<list::File>>
@@ -383,7 +400,7 @@ fn list_remote_directory(directory: &String, ftp_stream: &mut FtpStream) -> Opti
 	Some(directory_contents)
 }
 
-fn get_all_local_files_recursive_from(directory: &String) -> Vec<File>
+fn get_all_local_files_recursive_from(directory: &String) -> Option<Vec<File>>
 {
 	let mut current_directory = directory.clone();
 	let mut tree: Vec<File> = Vec::new();
@@ -419,7 +436,7 @@ fn get_all_local_files_recursive_from(directory: &String) -> Vec<File>
 								Err(_) =>
 								{
 									println!("[ERROR] Failed to get file name of something in local directory");
-									continue;
+									return None;
 								}
 							};
 
@@ -461,7 +478,7 @@ fn get_all_local_files_recursive_from(directory: &String) -> Vec<File>
 																		let _ = queue!(stdout, SetForegroundColor(Color::Reset));
 																		let _ = queue!(stdout, Print(format!("Failed to trim local file nanoseconds!\n")));
 																		let _ = stdout.flush();
-																		continue;
+																		return None;
 																	}
 																}
 															},
@@ -475,7 +492,7 @@ fn get_all_local_files_recursive_from(directory: &String) -> Vec<File>
 																let _ = queue!(stdout, SetForegroundColor(Color::Reset));
 																let _ = queue!(stdout, Print(format!("Failed to trim local file seconds!\n")));
 																let _ = stdout.flush();
-																continue;
+																return None;
 															}
 														};
 														//println!("{}", date_modified.time().to_string());
@@ -491,7 +508,7 @@ fn get_all_local_files_recursive_from(directory: &String) -> Vec<File>
 														let _ = queue!(stdout, SetForegroundColor(Color::Reset));
 														let _ = queue!(stdout, Print(format!("Failed to get last modified time of file in local directory \"{}\", {}", fullpath, error)));
 														let _ = stdout.flush();
-														continue;
+														return None;
 													}
 												}
 											},
@@ -505,7 +522,7 @@ fn get_all_local_files_recursive_from(directory: &String) -> Vec<File>
 												let _ = queue!(stdout, SetForegroundColor(Color::Reset));
 												let _ = queue!(stdout, Print(format!("Failed to get metadata of file in local directory \"{}\", {}", fullpath, error)));
 												let _ = stdout.flush();
-												continue;
+												return None;
 											}
 										};
 
@@ -543,6 +560,7 @@ fn get_all_local_files_recursive_from(directory: &String) -> Vec<File>
 									let _ = queue!(stdout, SetForegroundColor(Color::Reset));
 									let _ = queue!(stdout, Print(format!("Failed to get file type of something in local directory! ({})\n", error)));
 									let _ = stdout.flush();
+									return None;
 								}
 							}
 						},
@@ -556,6 +574,7 @@ fn get_all_local_files_recursive_from(directory: &String) -> Vec<File>
 							let _ = queue!(stdout, SetForegroundColor(Color::Reset));
 							let _ = queue!(stdout, Print(format!("Failed to access something in local directory! ({})\n", error)));
 							let _ = stdout.flush();
+							return None;
 						}
 					}
 				}
@@ -570,6 +589,7 @@ fn get_all_local_files_recursive_from(directory: &String) -> Vec<File>
 				let _ = queue!(stdout, SetForegroundColor(Color::Reset));
 				let _ = queue!(stdout, Print(format!("Failed to list local directory \"{}\"\n", current_directory)));
 				let _ = stdout.flush();
+				return None;
 			}
 		}
 
@@ -582,7 +602,7 @@ fn get_all_local_files_recursive_from(directory: &String) -> Vec<File>
 		i += 1;
 	}
 
-	tree
+	Some(tree)
 }
 
 fn list_local_directory(directory: &String) -> Option<fs::ReadDir>
