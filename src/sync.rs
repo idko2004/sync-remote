@@ -155,19 +155,7 @@ pub fn start_sync_blocking(sync_location: &SyncLocation)
 		let _ = queue!(stdout, SetAttribute(Attribute::Reset));
 		let _ = stdout.flush();
 	}
-	let all_remote_files = match get_all_remote_files_recursive_from(&sync_location.remote_path, &mut ftp_stream)
-	{
-		Some(value) => value,
-		None =>
-		{
-			let _ = queue!(stdout, SetAttribute(Attribute::Bold));
-			let _ = queue!(stdout, SetForegroundColor(Color::Red));
-			let _ = queue!(stdout, Print("\n[ERROR] Listing remote files failed! Aboring...\n"));
-			let _ = queue!(stdout, SetAttribute(Attribute::Reset));
-			let _ = queue!(stdout, SetForegroundColor(Color::Reset));
-			return;
-		}
-	};
+	let all_remote_files = get_all_remote_files_recursive_from(&sync_location.remote_path, &mut ftp_stream);
 
 
 	{ //Listing local files message
@@ -179,19 +167,7 @@ pub fn start_sync_blocking(sync_location: &SyncLocation)
 		let _ = queue!(stdout, SetAttribute(Attribute::Reset));
 		let _ = stdout.flush();
 	}
-	let all_local_files = match get_all_local_files_recursive_from(&sync_location.local_path)
-	{
-		Some(value) => value,
-		None =>
-		{
-			let _ = queue!(stdout, SetAttribute(Attribute::Bold));
-			let _ = queue!(stdout, SetForegroundColor(Color::Red));
-			let _ = queue!(stdout, Print("\n[ERROR] Listing local files failed! Aboring...\n"));
-			let _ = queue!(stdout, SetAttribute(Attribute::Reset));
-			let _ = queue!(stdout, SetForegroundColor(Color::Reset));
-			return;
-		}
-	};
+	let all_local_files = get_all_local_files_recursive_from(&sync_location.local_path);
 
 
 	if sync_location.advanced_backups
@@ -266,7 +242,7 @@ pub fn start_sync_blocking(sync_location: &SyncLocation)
 	sync_files(&all_files_linked, sync_location, &mut ftp_stream);
 }
 
-fn get_all_remote_files_recursive_from(directory: &String, ftp_stream: &mut FtpStream) -> Option<Vec<File>>
+fn get_all_remote_files_recursive_from(directory: &String, ftp_stream: &mut FtpStream) -> Vec<File>
 {
 	let mut current_directory: String = directory.clone();
 	let mut tree: Vec<File> = Vec::new();
@@ -282,8 +258,7 @@ fn get_all_remote_files_recursive_from(directory: &String, ftp_stream: &mut FtpS
 			{
 				if files_vector.is_empty()
 				{
-					//println!("Directory is empty: {}", current_directory);
-					()
+					continue;
 				}
 
 				for ftp_file in files_vector
@@ -332,13 +307,12 @@ fn get_all_remote_files_recursive_from(directory: &String, ftp_stream: &mut FtpS
 			{
 				let mut stdout = io::stdout();
 				let _ = queue!(stdout, SetAttribute(Attribute::Bold));
-				let _ = queue!(stdout, SetForegroundColor(Color::Red));
-				let _ = queue!(stdout, Print("\n[ERROR] "));
+				let _ = queue!(stdout, SetForegroundColor(Color::Yellow));
+				let _ = queue!(stdout, Print("\n[WARN] "));
 				let _ = queue!(stdout, SetAttribute(Attribute::Reset));
 				let _ = queue!(stdout, SetForegroundColor(Color::Reset));
-				let _ = queue!(stdout, Print(format!("Failed to list remote directory \"{}\"!\n", current_directory)));
+				let _ = queue!(stdout, Print(format!("Failed to list remote directory \"{}\". Might just mean that the folder or file doesn't exist on the remote.\n", current_directory)));
 				let _ = stdout.flush();
-				return None;
 			}
 		}
 
@@ -350,7 +324,7 @@ fn get_all_remote_files_recursive_from(directory: &String, ftp_stream: &mut FtpS
 		i += 1;
 	}
 
-	Some(tree)
+	tree
 }
 
 fn list_remote_directory(directory: &String, ftp_stream: &mut FtpStream) -> Option<Vec<list::File>>
@@ -362,8 +336,8 @@ fn list_remote_directory(directory: &String, ftp_stream: &mut FtpStream) -> Opti
 		{
 			let mut stdout = io::stdout();
 			let _ = queue!(stdout, SetAttribute(Attribute::Bold));
-			let _ = queue!(stdout, SetForegroundColor(Color::Red));
-			let _ = queue!(stdout, Print("\n[ERROR] "));
+			let _ = queue!(stdout, SetForegroundColor(Color::Yellow));
+			let _ = queue!(stdout, Print("\n[WARN] "));
 			let _ = queue!(stdout, SetAttribute(Attribute::Reset));
 			let _ = queue!(stdout, SetForegroundColor(Color::Reset));
 			let _ = queue!(stdout, Print(format!("Failed to list content of directory \"{directory}\", ({error})\n")));
@@ -400,7 +374,7 @@ fn list_remote_directory(directory: &String, ftp_stream: &mut FtpStream) -> Opti
 	Some(directory_contents)
 }
 
-fn get_all_local_files_recursive_from(directory: &String) -> Option<Vec<File>>
+fn get_all_local_files_recursive_from(directory: &String) -> Vec<File>
 {
 	let mut current_directory = directory.clone();
 	let mut tree: Vec<File> = Vec::new();
@@ -436,7 +410,7 @@ fn get_all_local_files_recursive_from(directory: &String) -> Option<Vec<File>>
 								Err(_) =>
 								{
 									println!("[ERROR] Failed to get file name of something in local directory");
-									return None;
+									continue;
 								}
 							};
 
@@ -478,7 +452,7 @@ fn get_all_local_files_recursive_from(directory: &String) -> Option<Vec<File>>
 																		let _ = queue!(stdout, SetForegroundColor(Color::Reset));
 																		let _ = queue!(stdout, Print(format!("Failed to trim local file nanoseconds!\n")));
 																		let _ = stdout.flush();
-																		return None;
+																		continue;
 																	}
 																}
 															},
@@ -492,7 +466,7 @@ fn get_all_local_files_recursive_from(directory: &String) -> Option<Vec<File>>
 																let _ = queue!(stdout, SetForegroundColor(Color::Reset));
 																let _ = queue!(stdout, Print(format!("Failed to trim local file seconds!\n")));
 																let _ = stdout.flush();
-																return None;
+																continue;
 															}
 														};
 														//println!("{}", date_modified.time().to_string());
@@ -508,7 +482,7 @@ fn get_all_local_files_recursive_from(directory: &String) -> Option<Vec<File>>
 														let _ = queue!(stdout, SetForegroundColor(Color::Reset));
 														let _ = queue!(stdout, Print(format!("Failed to get last modified time of file in local directory \"{}\", {}", fullpath, error)));
 														let _ = stdout.flush();
-														return None;
+														continue;
 													}
 												}
 											},
@@ -522,7 +496,7 @@ fn get_all_local_files_recursive_from(directory: &String) -> Option<Vec<File>>
 												let _ = queue!(stdout, SetForegroundColor(Color::Reset));
 												let _ = queue!(stdout, Print(format!("Failed to get metadata of file in local directory \"{}\", {}", fullpath, error)));
 												let _ = stdout.flush();
-												return None;
+												continue;
 											}
 										};
 
@@ -560,7 +534,6 @@ fn get_all_local_files_recursive_from(directory: &String) -> Option<Vec<File>>
 									let _ = queue!(stdout, SetForegroundColor(Color::Reset));
 									let _ = queue!(stdout, Print(format!("Failed to get file type of something in local directory! ({})\n", error)));
 									let _ = stdout.flush();
-									return None;
 								}
 							}
 						},
@@ -574,7 +547,6 @@ fn get_all_local_files_recursive_from(directory: &String) -> Option<Vec<File>>
 							let _ = queue!(stdout, SetForegroundColor(Color::Reset));
 							let _ = queue!(stdout, Print(format!("Failed to access something in local directory! ({})\n", error)));
 							let _ = stdout.flush();
-							return None;
 						}
 					}
 				}
@@ -589,7 +561,6 @@ fn get_all_local_files_recursive_from(directory: &String) -> Option<Vec<File>>
 				let _ = queue!(stdout, SetForegroundColor(Color::Reset));
 				let _ = queue!(stdout, Print(format!("Failed to list local directory \"{}\"\n", current_directory)));
 				let _ = stdout.flush();
-				return None;
 			}
 		}
 
@@ -602,7 +573,7 @@ fn get_all_local_files_recursive_from(directory: &String) -> Option<Vec<File>>
 		i += 1;
 	}
 
-	Some(tree)
+	tree
 }
 
 fn list_local_directory(directory: &String) -> Option<fs::ReadDir>
