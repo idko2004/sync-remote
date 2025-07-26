@@ -70,6 +70,7 @@ enum AddRemoteTuiStep
 	SettingRemoteUsername,
 	SettingRemotePassword,
 	BasicSummary,
+	AdvancedBackup,
 }
 
 enum UserInput
@@ -100,6 +101,7 @@ pub struct NewRemoteDetails
 	pub local_path: Option<String>,
 	pub remote_username: Option<String>,
 	pub remote_password: Option<String>,
+	pub advanced_backups: Option<bool>,
 }
 
 impl NewRemoteDetails
@@ -114,6 +116,7 @@ impl NewRemoteDetails
 			local_path: None,
 			remote_username: None,
 			remote_password: None,
+			advanced_backups: None,
 		}
 	}
 }
@@ -351,20 +354,30 @@ fn logic_add_remote_menu(ui_state: &TuiState, new_remote_details: &mut NewRemote
 						_ => ui_state.clone()
 					}
 				},
-				AddRemoteTuiStep::AskingIfNeedsLogin =>
+				AddRemoteTuiStep::AskingIfNeedsLogin |
+				AddRemoteTuiStep::BasicSummary |
+				AddRemoteTuiStep::AdvancedBackup =>
 				{
 					let _ = execute!(stdout(), Hide);
 					let mut index_selected_option = 0;
+
+					let list_length = match step
+					{
+						AddRemoteTuiStep::AskingIfNeedsLogin => 2,
+						AddRemoteTuiStep::BasicSummary => 3,
+						AddRemoteTuiStep::AdvancedBackup => 2,
+						_ => 0,
+					};
 					
 					loop
 					{
-						render_add_remote_menu(ui_state, "", index_selected_option, None);
+						render_add_remote_menu(ui_state, "", index_selected_option, Some(new_remote_details));
 						match read_input_raw_mode(false)
 						{
 							UserInput::MoveDown =>
 							{
 								index_selected_option += 1;
-								if index_selected_option >= 2 //Número total de opciones
+								if index_selected_option >= list_length
 								{
 									index_selected_option = 1;
 								}
@@ -388,72 +401,62 @@ fn logic_add_remote_menu(ui_state: &TuiState, new_remote_details: &mut NewRemote
 						}
 					}
 
-					if index_selected_option == 0
+					//Determinining what to do when pressing enter
+					match step
 					{
-						TuiState::AddRemote(AddRemoteTuiStep::SettingRemoteUsername)
-					}
-					else
-					{
-						TuiState::AddRemote(AddRemoteTuiStep::BasicSummary)
+						AddRemoteTuiStep::AskingIfNeedsLogin =>
+						{
+							if index_selected_option == 0
+							{
+								TuiState::AddRemote(AddRemoteTuiStep::SettingRemoteUsername)
+							}
+							else
+							{
+								TuiState::AddRemote(AddRemoteTuiStep::BasicSummary)
+							}
+						},
+						AddRemoteTuiStep::BasicSummary =>
+						{
+							match index_selected_option
+							{
+								0 =>
+								{
+									//Set all advanced settings to their default state
+									new_remote_details.advanced_backups = Some(true);
+
+									TuiState::AddRemoteDone
+								},
+								1 =>
+								{
+									TuiState::AddRemote(AddRemoteTuiStep::AdvancedBackup)
+								},
+								2 =>
+								{
+									kill_program();
+									ui_state.clone()
+								},
+								_ =>
+								{
+									ui_state.clone()
+								}
+							}
+						}
+						AddRemoteTuiStep::AdvancedBackup =>
+						{
+							if index_selected_option == 0
+							{
+								new_remote_details.advanced_backups = Some(true);
+								TuiState::AddRemoteDone //Esto debería de cambiarse a un AdvancedSummary o algo luego.
+							}
+							else
+							{
+								new_remote_details.advanced_backups = Some(false);
+								TuiState::AddRemoteDone //Esto debería de cambiarse a un AdvancedSummary o algo luego.
+							}
+						},
+						_ => ui_state.clone()
 					}
 				},
-				AddRemoteTuiStep::BasicSummary =>
-				{
-					let _ = execute!(stdout(), Hide);
-					let mut index_selected_option = 0;
-					
-					loop
-					{
-						render_add_remote_menu(ui_state, "", index_selected_option, Some(&new_remote_details));
-						match read_input_raw_mode(false)
-						{
-							UserInput::MoveDown =>
-							{
-								index_selected_option += 1;
-								if index_selected_option >= 3 //Número total de opciones
-								{
-									index_selected_option = 2;
-								}
-							},
-							UserInput::MoveUp =>
-							{
-								if index_selected_option > 0
-								{
-									index_selected_option -= 1;
-								}
-							},
-							UserInput::Select =>
-							{
-								break;
-							},
-							UserInput::Exit =>
-							{
-								kill_program();
-							},
-							_ => (),
-						}
-					}
-
-					match index_selected_option
-					{
-						0 => TuiState::AddRemoteDone,
-						1 =>
-						{
-							panic_gracefully("todo! advanced settings");
-							std::process::exit(1);
-						},
-						2 =>
-						{
-							kill_program();
-							ui_state.clone()
-						},
-						_ =>
-						{
-							panic_gracefully("[ERROR] Invalid item selected on list");
-							std::process::exit(1);
-						}
-					}
-				}
 			}
 		},
 		_ =>
@@ -843,6 +846,42 @@ fn render_add_remote_menu(ui_state: &TuiState, current_string: &str, selected_op
 					let _ = queue!(stdout, MoveToColumn(3));
 					let _ = stdout.flush();
 				},
+				AddRemoteTuiStep::AdvancedBackup =>
+				{
+					let selectable_options = vec!
+					[
+						String::from("Yes (default)"),
+						String::from("No"),
+					];
+					redraw
+					(
+						&RedrawOptions
+						{
+							box_title: String::from(" Add remote with advanced settings "),
+							selectable_options: Some(selectable_options),
+							draw_options_at_coordinates: (6, 0),
+							selected_option: selected_option,
+						}
+					);
+					let _ = queue!(stdout, MoveTo(3, 2));
+					let _ = queue!(stdout, SetAttribute(Attribute::Bold));
+					let _ = queue!(stdout, SetForegroundColor(Color::DarkYellow));
+					let _ = queue!(stdout, Print("Backups"));
+					let _ = queue!(stdout, SetForegroundColor(Color::Reset));
+					let _ = queue!(stdout, SetAttribute(Attribute::Reset));
+					let _ = queue!(stdout, MoveToNextLine(1));
+					let _ = queue!(stdout, MoveToColumn(4));
+					let _ = queue!(stdout, Print("Would you like to make backups before syncing?"));
+					let _ = queue!(stdout, MoveToNextLine(2));
+					let _ = queue!(stdout, MoveToColumn(4));
+					let _ = queue!(stdout, Print("This will copy all the contents of the local directory to a backup folder."));
+					let _ = queue!(stdout, MoveToNextLine(1));
+					let _ = queue!(stdout, MoveToColumn(4));
+					let _ = queue!(stdout, Print("Depending on the contents, this can take a lot of storage space."));
+					let _ = queue!(stdout, MoveToNextLine(2));
+					let _ = queue!(stdout, MoveToColumn(3));
+					let _ = stdout.flush();
+				}
 				/*
 				_ =>
 				{

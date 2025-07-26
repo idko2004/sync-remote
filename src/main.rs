@@ -94,6 +94,11 @@ fn main()
 				Some(value) => value,
 				None => String::from(""),
 			};
+			let advanced_backups = match new_remote_details.advanced_backups
+			{
+				Some(value) => value,
+				None => true,
+			};
 
 			let sync_location = SyncLocation
 			{
@@ -104,7 +109,7 @@ fn main()
 				local_path: local_path,
 				remote_username: remote_username,
 				remote_password: remote_password,
-				advance_backups: true, //TODO: Cambiar este valor desde TUI
+				advanced_backups: advanced_backups,
 			};
 
 			match config::add_new_remote(&sync_location)

@@ -11,12 +11,20 @@ pub struct SyncLocation
 	pub local_path: String,
 	pub remote_username: String,
 	pub remote_password: String,
-	pub advance_backups: bool,
+	pub advanced_backups: bool,
 }
 
 pub fn get_program_folder() -> String
 {
-	let default = String::from("sync-remote");
+	let default = if cfg!(debug_assertions)
+	{
+		String::from("sync-remote-debug")
+	}
+	else
+	{
+		String::from("sync-remote")
+	};
+
 	match env::consts::OS
 	{
 		"linux" =>
@@ -27,7 +35,7 @@ pub fn get_program_folder() -> String
 				{
 					if !user.is_empty()
 					{
-						format!("/home/{user}/.local/share/idko2004.github.io/sync-remote")
+						format!("/home/{user}/.local/share/idko2004.github.io/{default}")
 					}
 					else
 					{
@@ -250,7 +258,7 @@ pub fn get_config() -> Option<Vec<SyncLocation>>
 						continue;
 					}
 				};
-				let advance_backups = match obj.get("advance_backups")
+				let advanced_backups = match obj.get("advanced_backups")
 				{
 					Some(value) =>
 					{
@@ -259,14 +267,14 @@ pub fn get_config() -> Option<Vec<SyncLocation>>
 							Some(value) => value,
 							None =>
 							{
-								println!("[ERROR] Some elements of teh config file are invalid! - advance_backups should be a boolean!");
+								println!("[ERROR] Some elements of teh config file are invalid! - advanced_backups should be a boolean!");
 								continue;
 							}
 						}
 					},
 					None =>
 					{
-						println!("[ERROR] Some elements of the config file are invalid! - Failed to obtain advance_backups value");
+						println!("[ERROR] Some elements of the config file are invalid! - Failed to obtain advanced_backups value");
 						continue;
 					}
 				};
@@ -282,7 +290,7 @@ pub fn get_config() -> Option<Vec<SyncLocation>>
 						local_path: String::from(local_path),
 						remote_username: String::from(remote_username),
 						remote_password: String::from(remote_password),
-						advance_backups: advance_backups,
+						advanced_backups: advanced_backups,
 					}
 				);
 			},

@@ -178,7 +178,7 @@ pub fn start_sync_blocking(sync_location: &SyncLocation)
 	let all_local_files = get_all_local_files_recursive_from(&sync_location.local_path);
 
 
-	if sync_location.advance_backups
+	if sync_location.advanced_backups
 	{
 		{ //Making a backup message
 			let _ = queue!(stdout, SetAttribute(Attribute::Bold));
