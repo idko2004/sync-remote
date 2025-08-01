@@ -143,7 +143,7 @@ fn main()
 
 fn encodify_name(name: &String) -> String
 {
-	let mut result = String::new();
+	let mut result = name.replace(" ", "_");
 	let _ = encode_unquoted_attribute_to_string(name, &mut result);
-	result.replace(" ", "_")
+	result
 }
