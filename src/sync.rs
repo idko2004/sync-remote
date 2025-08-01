@@ -258,7 +258,7 @@ fn get_all_remote_files_recursive_from(directory: &String, ftp_stream: &mut FtpS
 			{
 				if files_vector.is_empty()
 				{
-					continue;
+					()
 				}
 
 				for ftp_file in files_vector
@@ -320,7 +320,7 @@ fn get_all_remote_files_recursive_from(directory: &String, ftp_stream: &mut FtpS
 		{
 			Some(value) => value.clone(),
 			None => break,
-		};	
+		};
 		i += 1;
 	}
 
@@ -555,11 +555,11 @@ fn get_all_local_files_recursive_from(directory: &String) -> Vec<File>
 			{
 				let mut stdout = io::stdout();
 				let _ = queue!(stdout, SetAttribute(Attribute::Bold));
-				let _ = queue!(stdout, SetForegroundColor(Color::Red));
-				let _ = queue!(stdout, Print("\n[ERROR] "));
+				let _ = queue!(stdout, SetForegroundColor(Color::Yellow));
+				let _ = queue!(stdout, Print("\n[WARN] "));
 				let _ = queue!(stdout, SetAttribute(Attribute::Reset));
 				let _ = queue!(stdout, SetForegroundColor(Color::Reset));
-				let _ = queue!(stdout, Print(format!("Failed to list local directory \"{}\"\n", current_directory)));
+				let _ = queue!(stdout, Print(format!("Failed to list local directory \"{}\". It might just mean that the directory doesn't exist.\n", current_directory)));
 				let _ = stdout.flush();
 			}
 		}
