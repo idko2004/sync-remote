@@ -11,41 +11,21 @@ use crossterm::
 {
 	cursor::
 	{
-		MoveTo,
-		MoveToNextLine,
-		MoveToColumn,
-		Hide,
-		Show,
-		EnableBlinking,
+		EnableBlinking, Hide, MoveTo, MoveToColumn, MoveToNextLine, Show
 	},
 	event::
 	{
-		Event,
-		KeyModifiers,
-		KeyCode,
-		read
+		read, Event, KeyCode, KeyEventKind, KeyModifiers
 	},
 	execute,
 	queue,
 	style::
 	{
-		Color,
-		Print,
-		SetBackgroundColor,
-		SetForegroundColor,
-		SetAttribute,
-		Attribute,
+		Attribute, Color, Print, SetAttribute, SetBackgroundColor, SetForegroundColor
 	},
 	terminal::
 	{
-		is_raw_mode_enabled,
-		disable_raw_mode,
-		enable_raw_mode,
-		size,
-		Clear,
-		ClearType,
-		EnterAlternateScreen,
-		LeaveAlternateScreen
+		disable_raw_mode, enable_raw_mode, is_raw_mode_enabled, size, Clear, ClearType, EnterAlternateScreen, LeaveAlternateScreen
 	}
 };
 
@@ -1056,7 +1036,18 @@ fn process_input_raw_mode(event: &Event, return_chars: bool) -> UserInput
 {
 	let key_event = match event.as_key_event()
 	{
-		Some(value) => value,
+		Some(value) =>
+		{
+			if value.kind == KeyEventKind::Press
+			|| value.kind == KeyEventKind::Repeat
+			{
+				value
+			}
+			else
+			{
+				return UserInput::Ignore;
+			}
+		},
 		None =>
 		{
 			return UserInput::Ignore;

@@ -102,7 +102,7 @@ pub fn start_sync_blocking(sync_location: &SyncLocation)
 		let _ = queue!(stdout, SetAttribute(Attribute::Reset));
 		let _ = stdout.flush();
 	}
-	let ftp_stream = match FtpStream::connect(&sync_location.remote)
+	let mut ftp_stream = match FtpStream::connect(&sync_location.remote)
 	{
 		Ok(value) => value,
 		Err(error) =>
@@ -117,7 +117,7 @@ pub fn start_sync_blocking(sync_location: &SyncLocation)
 			return;
 		}
 	};
-	let mut ftp_stream = ftp_stream.active_mode(Duration::from_secs(120));
+	//let mut ftp_stream = ftp_stream.active_mode(Duration::from_secs(120));
 
 	
 	{ //Logging in message

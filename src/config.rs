@@ -48,7 +48,21 @@ pub fn get_program_folder() -> String
 					default
 				}
 			}
-			
+		},
+		"windows" =>
+		{
+			match env::var("LOCALAPPDATA")
+			{
+				Ok(app_data_folder) =>
+				{
+					format!("{app_data_folder}\\idko2004.github.io\\{default}")
+				},
+				Err(error) =>
+				{
+					println!("[ERROR] LOCALAPPDATA environment variable is not set, using current directory as data folder ({error})");
+					default
+				}
+			}
 		},
 		_ => default,
 	}
