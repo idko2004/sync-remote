@@ -4,7 +4,7 @@ install()
 	set -e
 
 	echo -e "\033[0;34mDownloading sync-remote v0.0.1\033[0m"
-	curl https://github.com/idko2004/sync-remote/releases/download/sync-remote-linux-v001 -o ~/.cache/sync-remote
+	curl https://github.com/idko2004/sync-remote/releases/download/v0.0.1/sync-remote-linux-v001 -o ~/.cache/sync-remote
 
 	echo -e "\033[0;34mInstalling...\033[0m"
 	mv ~/.cache/sync-remote ~/.local/bin/sync-remote
