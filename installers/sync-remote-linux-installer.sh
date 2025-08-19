@@ -27,7 +27,7 @@ install()
 	echo "Categories=Utilities;" >> ~/.cache/sync-remote.desktop
 	echo "Name=Sync Remote" >> ~/.cache/sync-remote.desktop
 	echo "Icon=folder-html" >> ~/.cache/sync-remote.desktop
-	echo "Exec=$PROGRAM_PATH" >> ~/.cache/sync-remote.desktop
+	echo "Exec=$PROGRAM_PATH --wait-to-exit" >> ~/.cache/sync-remote.desktop
 
 	mv ~/.cache/sync-remote.desktop ~/.local/share/applications
 

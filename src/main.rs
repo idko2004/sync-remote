@@ -1,16 +1,20 @@
 mod sync;
 mod config;
 mod tui;
+mod args;
 
 use crate::tui::TuiResult;
 use crate::config::SyncLocation;
 
+use crossterm::execute;
 use crossterm::{queue, style::{Color, Print, SetForegroundColor, SetAttribute, Attribute}};
 use std::io::Write;
 use html_escape::encode_unquoted_attribute_to_string;
 
 fn main()
 {
+	let args = args::check_arguments();
+
 	let sync_locations = match config::get_config()
 	{
 		Some(value) => value,
@@ -138,6 +142,10 @@ fn main()
 		}
 	};
 
+	if args.wait_to_exit
+	{
+		wait_to_exit();
+	}
 
 }
 
@@ -147,4 +155,29 @@ fn encodify_name(name: &String) -> String
 	let name_without_spaces = name.replace(" ", "_");
 	let _ = encode_unquoted_attribute_to_string(&name_without_spaces, &mut result);
 	result
+}
+
+fn wait_to_exit()
+{
+	let mut stdout = std::io::stdout();
+	let _ = execute!(stdout, Print("\nPress any key to exit...\n"));
+
+	loop
+	{
+		match crossterm::event::read()
+		{
+			Ok(event) =>
+			{
+				match event.as_key_event()
+				{
+					Some(_) =>
+					{
+						break;
+					}
+					None => ()
+				}
+			},
+			Err(_) => ()
+		}
+	}
 }
