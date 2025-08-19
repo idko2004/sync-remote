@@ -142,8 +142,6 @@ pub fn start_tui_blocking(selectable_options: &Vec<String>) -> TuiResult
 				return TuiResult::CreateRemote(new_remote_details);
 			}
 		}
-
-		std::thread::sleep(std::time::Duration::from_millis(50));
 	}
 }
 
@@ -295,7 +293,6 @@ fn logic_add_remote_menu(ui_state: &TuiState, new_remote_details: &mut NewRemote
 							},
 							_ => (),
 						}
-						std::thread::sleep(std::time::Duration::from_millis(50));
 					}
 
 					//Comportamiento que varía en pantallas parecidas.
