@@ -1,0 +1,11 @@
+- Guardar un registro local de los cambios realizados en el remote.
+
+- Cuando se añade un remote, si no hay ningún error, volver al menú principal en lugar de terminar.
+
+- Poder editar remotes desde la interfaz de usuario.
+
+- Gestionar descargas parciales sin corromper el archivo.
+
+- Soporte para smb.
+
+- Soporte para SFTP.
