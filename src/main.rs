@@ -15,52 +15,53 @@ fn main()
 {
 	let args = args::check_arguments();
 
-	let sync_locations = match config::get_config()
+	loop
 	{
-		Some(value) => value,
-		None => return,
-	};
-
-	let mut remote_names: Vec<String> = Vec::with_capacity(sync_locations.len() + 1);
-	for location in &sync_locations
-	{
-		remote_names.push(location.name.clone());
-	}
-	remote_names.push(String::from("(Add new remote)"));
-
-	match tui::start_tui_blocking(&remote_names)
-	{
-		TuiResult::SyncRemote(remote_selected) =>
+		let sync_locations = match config::get_config()
 		{
-			if remote_selected == remote_names.len() - 1
-			{
-				println!("TODO: Add new remote ui");
-				return;
-			}
+			Some(value) => value,
+			None => return,
+		};
 
-			let selected_sync_location = match sync_locations.get(remote_selected)
-			{
-				Some(value) => value,
-				None =>
-				{
-					println!("[ERROR] Failed to get access to the sync location at the index {remote_selected}");
-					return;
-				}
-			};
-
-			sync::start_sync_blocking(selected_sync_location);
-		},
-		TuiResult::CreateRemote(new_remote_details) =>
+		let mut remote_names: Vec<String> = Vec::with_capacity(sync_locations.len() + 1);
+		for location in &sync_locations
 		{
-			create_new_remote(new_remote_details);
+			remote_names.push(location.name.clone());
 		}
-	};
+		remote_names.push(String::from("(Add new remote)"));
 
-	if args.wait_to_exit
-	{
-		wait_to_exit();
+		match tui::start_tui_blocking(&remote_names)
+		{
+			TuiResult::SyncRemote(remote_selected) =>
+			{
+				let selected_sync_location = match sync_locations.get(remote_selected)
+				{
+					Some(value) => value,
+					None =>
+					{
+						println!("[ERROR] Failed to get access to the sync location at the index {remote_selected}");
+						return;
+					}
+				};
+
+				sync::start_sync_blocking(selected_sync_location);
+
+				if args.wait_to_exit
+				{
+					wait_to_exit();
+				}
+				break;
+			},
+			TuiResult::CreateRemote(new_remote_details) =>
+			{
+				create_new_remote(new_remote_details);
+				if args.wait_to_exit
+				{
+					wait_to_exit();
+				}
+			}
+		};
 	}
-
 }
 
 fn encodify_name(name: &String) -> String

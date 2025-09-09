@@ -1,8 +1,8 @@
 - Guardar un registro local de los cambios realizados en el remote.
 
-- Cuando se añade un remote, si no hay ningún error, volver al menú principal en lugar de terminar.
+- Al momento de crear un remote, parsear correctamente todos los datos (por ejemplo, asegurarse de que las rutas no terminen en /, que no haya repetidos (tanto nombre real como nombre codificado))
 
-- Poder editar remotes desde la interfaz de usuario.
+- Poder editar y borrar remotes desde la interfaz de usuario.
 
 - Gestionar descargas parciales sin corromper el archivo.
 
