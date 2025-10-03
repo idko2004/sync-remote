@@ -3,7 +3,7 @@ use chrono::{DateTime, Timelike, Utc};
 use suppaftp::{FtpStream, list};
 use crossterm::{queue, style::{Color, Print, SetForegroundColor, SetAttribute, Attribute}};
 
-use crate::config::{SyncLocation, get_program_folder};
+use crate::{config::{SyncLocation, get_program_folder}, args::{Args, LogLevel}};
 
 #[derive(Clone, Debug)]
 struct File
@@ -81,7 +81,7 @@ impl Report
 	}
 }
 
-pub fn start_sync_blocking(sync_location: &SyncLocation)
+pub fn start_sync_blocking(sync_location: &SyncLocation, args: &Args)
 {
 	let mut stdout = io::stdout();
 
@@ -239,7 +239,7 @@ pub fn start_sync_blocking(sync_location: &SyncLocation)
 		let _ = stdout.flush();
 	}
 
-	sync_files(&all_files_linked, sync_location, &mut ftp_stream);
+	sync_files(&all_files_linked, sync_location, &mut ftp_stream, args);
 }
 
 fn get_all_remote_files_recursive_from(directory: &String, ftp_stream: &mut FtpStream) -> Vec<File>
@@ -899,18 +899,18 @@ fn get_relative_directory(file: &File, sync_location_path: &String) -> String
 	}
 }
 
-fn sync_files(all_linked_files: &Vec<LinkedFile>, sync_location: &SyncLocation, ftp_stream: &mut FtpStream)
+fn sync_files(all_linked_files: &Vec<LinkedFile>, sync_location: &SyncLocation, ftp_stream: &mut FtpStream, args: &Args)
 {
 	let mut report = Report::new();
 
 	do_nothing(all_linked_files, &mut report);
-	upload_to_remote(all_linked_files, sync_location, ftp_stream, &mut report);
-	download_to_local(all_linked_files, sync_location, ftp_stream, &mut report);
+	upload_to_remote(all_linked_files, sync_location, ftp_stream, &mut report, args);
+	download_to_local(all_linked_files, sync_location, ftp_stream, &mut report, args);
 
 	report.print();
 }
 
-fn upload_to_remote(all_linked_files: &Vec<LinkedFile>, sync_location: &SyncLocation, ftp_stream: &mut FtpStream, report: &mut Report)
+fn upload_to_remote(all_linked_files: &Vec<LinkedFile>, sync_location: &SyncLocation, ftp_stream: &mut FtpStream, report: &mut Report, args: &Args)
 {
 	let mut stdout = io::stdout();
 
@@ -943,16 +943,26 @@ fn upload_to_remote(all_linked_files: &Vec<LinkedFile>, sync_location: &SyncLoca
 			//Crear directorio si no existe
 			if !directory_exists
 			{
-				match ftp_stream.mkdir(remote_directory.clone())
+				match ftp_stream.mkdir(&remote_directory)
 				{
-					Ok(_) => (),
+					Ok(_) => 
+					{
+						if args.log_level == LogLevel::Verbose
+						{
+							let _ = queue!(stdout, SetForegroundColor(Color::Cyan));
+							let _ = queue!(stdout, Print("\n[INFO] "));
+							let _ = queue!(stdout, SetForegroundColor(Color::Reset));
+							let _ = queue!(stdout, Print(format!("Directory {} created on remote.\n", &remote_directory).as_str()));
+							let _ = stdout.flush();
+						}
+					},
 					Err(error) =>
 					{
 						report.errors += 1;
 						let _ = queue!(stdout, SetForegroundColor(Color::Red));
 						let _ = queue!(stdout, Print(" (failed!) \n[ERROR] "));
 						let _ = queue!(stdout, SetForegroundColor(Color::Reset));
-						let _ = queue!(stdout, Print(format!("Failed to create remote directory ({}), {}", remote_directory.clone(), error)));
+						let _ = queue!(stdout, Print(format!("Failed to create remote directory ({}), {}\n", &remote_directory, error)));
 						let _ = stdout.flush();
 						continue;
 					}
@@ -969,7 +979,7 @@ fn upload_to_remote(all_linked_files: &Vec<LinkedFile>, sync_location: &SyncLoca
 					let _ = queue!(stdout, SetForegroundColor(Color::Red));
 					let _ = queue!(stdout, Print(" (failed!) \n[ERROR] "));
 					let _ = queue!(stdout, SetForegroundColor(Color::Reset));
-					let _ = queue!(stdout, Print(format!("Failed to access internal local file handler! ({})", &remote_directory)));
+					let _ = queue!(stdout, Print(format!("Failed to access internal local file handler! ({})\n", &remote_directory)));
 					let _ = stdout.flush();
 					continue;
 				}
@@ -984,14 +994,14 @@ fn upload_to_remote(all_linked_files: &Vec<LinkedFile>, sync_location: &SyncLoca
 					let _ = queue!(stdout, SetForegroundColor(Color::Red));
 					let _ = queue!(stdout, Print(" (failed!) \n[ERROR] "));
 					let _ = queue!(stdout, SetForegroundColor(Color::Reset));
-					let _ = queue!(stdout, Print(format!("Failed to open local file!! ({}) {}", &remote_directory, error)));
+					let _ = queue!(stdout, Print(format!("Failed to open local file!! ({}) {}\n", &remote_directory, error)));
 					let _ = stdout.flush();
 					continue;
 				}
 			};
 
 			//Subir archivo a remote
-			match ftp_stream.put_file(remote_fullpath, &mut local_file_handler)
+			match ftp_stream.put_file(&remote_fullpath, &mut local_file_handler)
 			{
 				Ok(_) => (),
 				Err(error) =>
@@ -1000,7 +1010,7 @@ fn upload_to_remote(all_linked_files: &Vec<LinkedFile>, sync_location: &SyncLoca
 					let _ = queue!(stdout, SetForegroundColor(Color::Red));
 					let _ = queue!(stdout, Print(" (failed!) \n[ERROR] "));
 					let _ = queue!(stdout, SetForegroundColor(Color::Reset));
-					let _ = queue!(stdout, Print(format!("Failed to upload file to remote ({}), {}", &remote_directory, error)));
+					let _ = queue!(stdout, Print(format!("Failed to upload file to remote ({})\n{}\n", &remote_fullpath, error)));
 					let _ = stdout.flush();
 					continue;
 				}
@@ -1017,7 +1027,7 @@ fn upload_to_remote(all_linked_files: &Vec<LinkedFile>, sync_location: &SyncLoca
 	}
 }
 
-fn download_to_local(all_linked_files: &Vec<LinkedFile>, sync_location: &SyncLocation, ftp_stream: &mut FtpStream, report: &mut Report)
+fn download_to_local(all_linked_files: &Vec<LinkedFile>, sync_location: &SyncLocation, ftp_stream: &mut FtpStream, report: &mut Report, args: &Args)
 {
 	let mut stdout = io::stdout();
 
@@ -1050,9 +1060,19 @@ fn download_to_local(all_linked_files: &Vec<LinkedFile>, sync_location: &SyncLoc
 			//Crear directorio si no existe
 			if !directory_exists
 			{
-				match fs::create_dir(local_directory.as_str())
+				match fs::create_dir(&local_directory.as_str())
 				{
-					Ok(_) => (),
+					Ok(_) =>
+					{
+						if args.log_level == LogLevel::Verbose
+						{
+							let _ = queue!(stdout, SetForegroundColor(Color::Cyan));
+							let _ = queue!(stdout, Print("\n[INFO] "));
+							let _ = queue!(stdout, SetForegroundColor(Color::Reset));
+							let _ = queue!(stdout, Print(format!("Directory {} created on local machine.\n", &local_directory).as_str()));
+							let _ = stdout.flush();
+						}
+					},
 					Err(error) =>
 					{
 						report.errors += 1;

@@ -3,6 +3,14 @@ use std::env;
 pub struct Args
 {
 	pub wait_to_exit: bool,
+	pub log_level: LogLevel
+}
+
+#[derive(PartialEq)]
+pub enum LogLevel
+{
+	Default,
+	Verbose
 }
 
 pub fn check_arguments() -> Args
@@ -10,6 +18,7 @@ pub fn check_arguments() -> Args
 	let mut result = Args
 	{
 		wait_to_exit: false,
+		log_level: LogLevel::Default,
 	};
 
 	let args: Vec<String> = env::args().collect();
@@ -20,6 +29,10 @@ pub fn check_arguments() -> Args
 			"--wait-to-exit" =>
 			{
 				result.wait_to_exit = true;
+			},
+			"--verbose" =>
+			{
+				result.log_level = LogLevel::Verbose;
 			},
 			_ => ()
 		}

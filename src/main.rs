@@ -44,7 +44,7 @@ fn main()
 					}
 				};
 
-				sync::start_sync_blocking(selected_sync_location);
+				sync::start_sync_blocking(selected_sync_location, &args);
 
 				if args.wait_to_exit
 				{
@@ -259,6 +259,7 @@ fn encodify_name(name: &String) -> String
 {
 	let mut result = String::new();
 	let _ = encode_unquoted_attribute_to_string(name, &mut result);
+	let result = result.replace("&#x20;", "_");
 	let result = result.replace("&#32;", "_");
 	let result = result.replace("&#95;", "_");
 	result
