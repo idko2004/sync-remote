@@ -155,7 +155,7 @@ pub fn start_sync_blocking(sync_location: &SyncLocation, args: &Args)
 		let _ = queue!(stdout, SetAttribute(Attribute::Reset));
 		let _ = stdout.flush();
 	}
-	let all_remote_files = get_all_remote_files_recursive_from(&sync_location.remote_path, &mut ftp_stream);
+	let all_remote_files = get_all_remote_files_recursive_from(&sync_location.remote_path, &mut ftp_stream, args);
 
 
 	{ //Listing local files message
@@ -167,7 +167,7 @@ pub fn start_sync_blocking(sync_location: &SyncLocation, args: &Args)
 		let _ = queue!(stdout, SetAttribute(Attribute::Reset));
 		let _ = stdout.flush();
 	}
-	let all_local_files = get_all_local_files_recursive_from(&sync_location.local_path);
+	let all_local_files = get_all_local_files_recursive_from(&sync_location.local_path, args);
 
 
 	if sync_location.advanced_backups
@@ -227,7 +227,7 @@ pub fn start_sync_blocking(sync_location: &SyncLocation, args: &Args)
 
 	let all_files_linked = link_all_files(&all_remote_files, &all_local_files, sync_location);
 
-	let all_files_linked = set_sync_veredicts(all_files_linked);
+	let all_files_linked = set_sync_veredicts(all_files_linked, args);
 	
 	{ //Syncing message
 		let _ = queue!(stdout, SetAttribute(Attribute::Bold));
@@ -242,7 +242,7 @@ pub fn start_sync_blocking(sync_location: &SyncLocation, args: &Args)
 	sync_files(&all_files_linked, sync_location, &mut ftp_stream, args);
 }
 
-fn get_all_remote_files_recursive_from(directory: &String, ftp_stream: &mut FtpStream) -> Vec<File>
+fn get_all_remote_files_recursive_from(directory: &String, ftp_stream: &mut FtpStream, args: &Args) -> Vec<File>
 {
 	let mut current_directory: String = directory.clone();
 	let mut tree: Vec<File> = Vec::new();
@@ -252,7 +252,7 @@ fn get_all_remote_files_recursive_from(directory: &String, ftp_stream: &mut FtpS
 	
 	loop
 	{
-		match list_remote_directory(&current_directory, ftp_stream)
+		match list_remote_directory(&current_directory, ftp_stream, args)
 		{
 			Some(files_vector) =>
 			{
@@ -327,7 +327,7 @@ fn get_all_remote_files_recursive_from(directory: &String, ftp_stream: &mut FtpS
 	tree
 }
 
-fn list_remote_directory(directory: &String, ftp_stream: &mut FtpStream) -> Option<Vec<list::File>>
+fn list_remote_directory(directory: &String, ftp_stream: &mut FtpStream, args: &Args) -> Option<Vec<list::File>>
 {
 	let directory_listing = match ftp_stream.list(Some(directory.as_str()))
 	{
@@ -366,6 +366,10 @@ fn list_remote_directory(directory: &String, ftp_stream: &mut FtpStream) -> Opti
 				let _ = queue!(stdout, SetForegroundColor(Color::Reset));
 				let _ = queue!(stdout, Print(format!("Failed to parse remote directory! ({})\n", error)));
 				let _ = stdout.flush();
+				if !args.continue_on_error
+				{
+					std::process::exit(1);
+				}
 				continue;
 			}
 		}
@@ -374,7 +378,7 @@ fn list_remote_directory(directory: &String, ftp_stream: &mut FtpStream) -> Opti
 	Some(directory_contents)
 }
 
-fn get_all_local_files_recursive_from(directory: &String) -> Vec<File>
+fn get_all_local_files_recursive_from(directory: &String, args: &Args) -> Vec<File>
 {
 	let mut current_directory = directory.clone();
 	let mut tree: Vec<File> = Vec::new();
@@ -410,6 +414,10 @@ fn get_all_local_files_recursive_from(directory: &String) -> Vec<File>
 								Err(_) =>
 								{
 									println!("[ERROR] Failed to get file name of something in local directory");
+									if !args.continue_on_error
+									{
+										std::process::exit(1);
+									}
 									continue;
 								}
 							};
@@ -452,6 +460,10 @@ fn get_all_local_files_recursive_from(directory: &String) -> Vec<File>
 																		let _ = queue!(stdout, SetForegroundColor(Color::Reset));
 																		let _ = queue!(stdout, Print(format!("Failed to trim local file nanoseconds!\n")));
 																		let _ = stdout.flush();
+																		if !args.continue_on_error
+																		{
+																			std::process::exit(1);
+																		}
 																		continue;
 																	}
 																}
@@ -466,6 +478,10 @@ fn get_all_local_files_recursive_from(directory: &String) -> Vec<File>
 																let _ = queue!(stdout, SetForegroundColor(Color::Reset));
 																let _ = queue!(stdout, Print(format!("Failed to trim local file seconds!\n")));
 																let _ = stdout.flush();
+																if !args.continue_on_error
+																{
+																	std::process::exit(1);
+																}
 																continue;
 															}
 														};
@@ -482,6 +498,10 @@ fn get_all_local_files_recursive_from(directory: &String) -> Vec<File>
 														let _ = queue!(stdout, SetForegroundColor(Color::Reset));
 														let _ = queue!(stdout, Print(format!("Failed to get last modified time of file in local directory \"{}\", {}", fullpath, error)));
 														let _ = stdout.flush();
+														if !args.continue_on_error
+														{
+															std::process::exit(1);
+														}
 														continue;
 													}
 												}
@@ -496,6 +516,10 @@ fn get_all_local_files_recursive_from(directory: &String) -> Vec<File>
 												let _ = queue!(stdout, SetForegroundColor(Color::Reset));
 												let _ = queue!(stdout, Print(format!("Failed to get metadata of file in local directory \"{}\", {}", fullpath, error)));
 												let _ = stdout.flush();
+												if !args.continue_on_error
+												{
+													std::process::exit(1);
+												}
 												continue;
 											}
 										};
@@ -534,6 +558,10 @@ fn get_all_local_files_recursive_from(directory: &String) -> Vec<File>
 									let _ = queue!(stdout, SetForegroundColor(Color::Reset));
 									let _ = queue!(stdout, Print(format!("Failed to get file type of something in local directory! ({})\n", error)));
 									let _ = stdout.flush();
+									if !args.continue_on_error
+									{
+										std::process::exit(1);
+									}
 								}
 							}
 						},
@@ -547,6 +575,10 @@ fn get_all_local_files_recursive_from(directory: &String) -> Vec<File>
 							let _ = queue!(stdout, SetForegroundColor(Color::Reset));
 							let _ = queue!(stdout, Print(format!("Failed to access something in local directory! ({})\n", error)));
 							let _ = stdout.flush();
+							if !args.continue_on_error
+							{
+								std::process::exit(1);
+							}
 						}
 					}
 				}
@@ -813,7 +845,7 @@ fn link_all_files(all_remote_files: &Vec<File>, all_local_files: &Vec<File>, syn
 	all_linked_files
 }
 
-fn set_sync_veredicts(all_linked_files: Vec<LinkedFile>) -> Vec<LinkedFile>
+fn set_sync_veredicts(all_linked_files: Vec<LinkedFile>, args: &Args) -> Vec<LinkedFile>
 {
 	let mut new_linked_files_list: Vec<LinkedFile> = Vec::with_capacity(all_linked_files.len());
 	
@@ -843,6 +875,10 @@ fn set_sync_veredicts(all_linked_files: Vec<LinkedFile>) -> Vec<LinkedFile>
 				None =>
 				{
 					println!("[ERROR] somehow local file is none after comprobing that it's not??");
+					if !args.continue_on_error
+					{
+						std::process::exit(1);
+					}
 					continue;
 				}
 			};
@@ -852,6 +888,10 @@ fn set_sync_veredicts(all_linked_files: Vec<LinkedFile>) -> Vec<LinkedFile>
 				None =>
 				{
 					println!("[ERROR] somehow remote file is none after comprobing that it's not??");
+					if !args.continue_on_error
+					{
+						std::process::exit(1);
+					}
 					continue;
 				}
 			};
@@ -874,6 +914,10 @@ fn set_sync_veredicts(all_linked_files: Vec<LinkedFile>) -> Vec<LinkedFile>
 		else
 		{
 			println!("[ERROR] No idea what to do with this file: {}", linked_file.relative_path);
+			if !args.continue_on_error
+			{
+				std::process::exit(1);
+			}
 		}
 
 		new_linked_files_list.push(linked_file);
@@ -903,7 +947,7 @@ fn sync_files(all_linked_files: &Vec<LinkedFile>, sync_location: &SyncLocation, 
 {
 	let mut report = Report::new();
 
-	do_nothing(all_linked_files, &mut report);
+	do_nothing(all_linked_files, &mut report, args);
 	upload_to_remote(all_linked_files, sync_location, ftp_stream, &mut report, args);
 	download_to_local(all_linked_files, sync_location, ftp_stream, &mut report, args);
 
@@ -964,6 +1008,11 @@ fn upload_to_remote(all_linked_files: &Vec<LinkedFile>, sync_location: &SyncLoca
 						let _ = queue!(stdout, SetForegroundColor(Color::Reset));
 						let _ = queue!(stdout, Print(format!("Failed to create remote directory ({}), {}\n", &remote_directory, error)));
 						let _ = stdout.flush();
+
+						if !args.continue_on_error
+						{
+							std::process::exit(1);
+						}
 						continue;
 					}
 				}
@@ -981,6 +1030,11 @@ fn upload_to_remote(all_linked_files: &Vec<LinkedFile>, sync_location: &SyncLoca
 					let _ = queue!(stdout, SetForegroundColor(Color::Reset));
 					let _ = queue!(stdout, Print(format!("Failed to access internal local file handler! ({})\n", &remote_directory)));
 					let _ = stdout.flush();
+
+					if !args.continue_on_error
+					{
+						std::process::exit(1);
+					}
 					continue;
 				}
 			};
@@ -996,6 +1050,11 @@ fn upload_to_remote(all_linked_files: &Vec<LinkedFile>, sync_location: &SyncLoca
 					let _ = queue!(stdout, SetForegroundColor(Color::Reset));
 					let _ = queue!(stdout, Print(format!("Failed to open local file!! ({}) {}\n", &remote_directory, error)));
 					let _ = stdout.flush();
+
+					if !args.continue_on_error
+					{
+						std::process::exit(1);
+					}
 					continue;
 				}
 			};
@@ -1012,6 +1071,11 @@ fn upload_to_remote(all_linked_files: &Vec<LinkedFile>, sync_location: &SyncLoca
 					let _ = queue!(stdout, SetForegroundColor(Color::Reset));
 					let _ = queue!(stdout, Print(format!("Failed to upload file to remote ({})\n{}\n", &remote_fullpath, error)));
 					let _ = stdout.flush();
+
+					if !args.continue_on_error
+					{
+						std::process::exit(1);
+					}
 					continue;
 				}
 			}
@@ -1081,6 +1145,11 @@ fn download_to_local(all_linked_files: &Vec<LinkedFile>, sync_location: &SyncLoc
 						let _ = queue!(stdout, SetForegroundColor(Color::Reset));
 						let _ = queue!(stdout, Print(format!("Failed to create directory ({}), {}", &local_directory, error)));
 						let _ = stdout.flush();
+
+						if !args.continue_on_error
+						{
+							std::process::exit(1);
+						}
 						continue;
 					}
 				}
@@ -1098,6 +1167,11 @@ fn download_to_local(all_linked_files: &Vec<LinkedFile>, sync_location: &SyncLoc
 					let _ = queue!(stdout, SetForegroundColor(Color::Reset));
 					let _ = queue!(stdout, Print(format!("Failed to create local file or open existing local file as writable ({}), {}", &linked_file.relative_path, error)));
 					let _ = stdout.flush();
+
+					if !args.continue_on_error
+					{
+						std::process::exit(1);
+					}
 					continue;
 				}
 			};
@@ -1114,6 +1188,11 @@ fn download_to_local(all_linked_files: &Vec<LinkedFile>, sync_location: &SyncLoc
 					let _ = queue!(stdout, SetForegroundColor(Color::Reset));
 					let _ = queue!(stdout, Print(format!("Failed to access internal remote file handler! ({})", &linked_file.relative_path)));
 					let _ = stdout.flush();
+
+					if !args.continue_on_error
+					{
+						std::process::exit(1);
+					}
 					continue;
 				}
 			};
@@ -1129,6 +1208,11 @@ fn download_to_local(all_linked_files: &Vec<LinkedFile>, sync_location: &SyncLoc
 					let _ = queue!(stdout, SetForegroundColor(Color::Reset));
 					let _ = queue!(stdout, Print(format!("Unable to retrieve remote file ({}), {}", &linked_file.relative_path, error)));
 					let _ = stdout.flush();
+
+					if !args.continue_on_error
+					{
+						std::process::exit(1);
+					}
 					continue;
 				}
 			};
@@ -1149,6 +1233,11 @@ fn download_to_local(all_linked_files: &Vec<LinkedFile>, sync_location: &SyncLoc
 							let _ = queue!(stdout, SetForegroundColor(Color::Reset));
 							let _ = queue!(stdout, Print(format!("Failed to finalize remote stream ({}), {}", &linked_file.relative_path, error)));
 							let _ = stdout.flush();
+
+							if !args.continue_on_error
+							{
+								std::process::exit(1);
+							}
 							continue;
 						}
 					}
@@ -1161,6 +1250,11 @@ fn download_to_local(all_linked_files: &Vec<LinkedFile>, sync_location: &SyncLoc
 					let _ = queue!(stdout, SetForegroundColor(Color::Reset));
 					let _ = queue!(stdout, Print(format!("Failed to download file ({}), {}", &linked_file.relative_path, error)));
 					let _ = stdout.flush();
+					
+					if !args.continue_on_error
+					{
+						std::process::exit(1);
+					}
 					continue;
 				}
 			}
@@ -1176,7 +1270,7 @@ fn download_to_local(all_linked_files: &Vec<LinkedFile>, sync_location: &SyncLoc
 	}
 }
 
-fn do_nothing(all_linked_files: &Vec<LinkedFile>, report: &mut Report)
+fn do_nothing(all_linked_files: &Vec<LinkedFile>, report: &mut Report, args: &Args)
 {
 	let mut stdout = io::stdout();
 
@@ -1207,6 +1301,12 @@ fn do_nothing(all_linked_files: &Vec<LinkedFile>, report: &mut Report)
 			let _ = queue!(stdout, Print(" FAILED TO DETERMINE WHAT TO DO WITH THIS, WILL BE IGNORED: "));
 			let _ = queue!(stdout, SetAttribute(Attribute::Reset));
 			let _ = queue!(stdout, Print(format!("{}", linked_file.relative_path)));
+
+			if !args.continue_on_error
+			{
+				let _ = stdout.flush();
+				std::process::exit(1);
+			}
 		}
 	}
 	let _ = stdout.flush();

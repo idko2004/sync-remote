@@ -3,7 +3,8 @@ use std::env;
 pub struct Args
 {
 	pub wait_to_exit: bool,
-	pub log_level: LogLevel
+	pub log_level: LogLevel,
+	pub continue_on_error: bool,
 }
 
 #[derive(PartialEq)]
@@ -19,6 +20,7 @@ pub fn check_arguments() -> Args
 	{
 		wait_to_exit: false,
 		log_level: LogLevel::Default,
+		continue_on_error: false,
 	};
 
 	let args: Vec<String> = env::args().collect();
@@ -34,6 +36,10 @@ pub fn check_arguments() -> Args
 			{
 				result.log_level = LogLevel::Verbose;
 			},
+			"--continue-on-error" =>
+			{
+				result.continue_on_error = true;
+			}
 			_ => ()
 		}
 	}
